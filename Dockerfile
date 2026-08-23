@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+FROM node:20.20.2-alpine3.23 AS deps
 WORKDIR /app
+RUN apk --no-cache upgrade && npm install -g npm@10
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -10,8 +11,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Stage 2: Build application
-FROM node:20-alpine AS builder
+FROM node:20.20.2-alpine3.23 AS builder
 WORKDIR /app
+RUN apk --no-cache upgrade && npm install -g npm@10
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -21,8 +23,9 @@ COPY . .
 RUN npm run build
 
 # Stage 3: Production runner
-FROM node:20-alpine AS runner
+FROM node:20.20.2-alpine3.23 AS runner
 WORKDIR /app
+RUN apk --no-cache upgrade && npm install -g npm@10
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
