@@ -1,0 +1,35 @@
+"use client";
+
+export { AuthError } from "./services/errors";
+export {
+  changeEmail,
+  changePassword,
+  completeEmailVerification,
+  completePasswordReset,
+  deleteAccount,
+  getCurrentFirebaseUser,
+  getCurrentUser,
+  getPasswordResetEmail,
+  login,
+  logout,
+  observeAuthState,
+  refreshCurrentUser,
+  register,
+  sendPasswordReset,
+  sendVerificationEmail,
+  updateUsername,
+} from "./services/auth";
+export {
+  createUserProfile,
+  deleteUserProfile,
+  getUserProfile,
+  updateUserProfile,
+} from "./services/users";
+export { useAuth } from "./hooks/use-auth";
+export type {
+  ChangeEmailInput,
+  ChangePasswordInput,
+  LoginInput,
+  RegisterInput,
+  UpdateProfileInput,
+} from "./types/auth";
