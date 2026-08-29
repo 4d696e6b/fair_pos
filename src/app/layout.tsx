@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import "../styles/globals.css";
+import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
+import LoginModal from "@/components/auth/LoginModal";
 
 export const metadata: Metadata = {
   title: "Fair POS",
@@ -8,13 +10,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th">
       <body className="min-h-screen bg-stone-50 font-sans antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+          <LoginModal />
+        </AuthProvider>
       </body>
     </html>
   );
