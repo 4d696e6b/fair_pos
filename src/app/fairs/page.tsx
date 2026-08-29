@@ -1,0 +1,21 @@
+import SiteHeader from "@/components/SiteHeader";
+import FairCard from "@/components/FairCard";
+import { FAIRS } from "@/lib/mock-data";
+
+export default function FairsPage() {
+  return (
+    <div>
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <h1 className="mb-6 text-xl font-bold text-stone-900">
+          งานแฟร์ทั้งหมด
+        </h1>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {FAIRS.map((fair) => (
+            <FairCard key={fair.id} fair={fair} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

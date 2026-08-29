@@ -1,69 +1,129 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import SiteHeader from "@/components/SiteHeader";
+import FilterPill from "@/components/FilterPill";
+import FairCard from "@/components/FairCard";
+import RecommendedShopCard from "@/components/RecommendedShopCard";
+import { FAIRS, RECOMMENDED_SHOPS } from "@/lib/mock-data";
+import { FairCategory } from "@/lib/types";
+
+const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
+  "ทั้งหมด",
+  "ตลาดนัด",
+  "ของกิน",
+  "ของใช้",
+];
+
+export default function HomePage() {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(
+    "ทั้งหมด"
+  );
+
+  const fairs = FAIRS.filter((fair) => {
+    const matchesCategory = category === "ทั้งหมด" || fair.category === category;
+    const matchesQuery = fair.name.toLowerCase().includes(query.toLowerCase());
+    return matchesCategory && matchesQuery;
+  });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+    <div>
+      <SiteHeader />
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="relative flex min-h-[340px] flex-col items-center justify-center gap-6 px-6 py-20 text-center">
+          <Image
+            src="https://images.unsplash.com/photo-1533900298318-6b8da08a523e?q=80&w=1600&auto=format&fit=crop"
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+
+          <div className="relative z-10 space-y-3">
+            <h1 className="text-3xl font-bold text-white sm:text-4xl">
+              ค้นหางานแฟร์อาหารใกล้คุณ
+            </h1>
+            <p className="text-stone-100">
+              รวมร้านอร่อย งานอีเวนต์ และประสบการณ์การกินที่ดีที่สุด
+            </p>
+          </div>
+
+          <div className="relative z-10 flex w-full max-w-xl items-center gap-2 rounded-full bg-white p-1.5 shadow-lg">
+            <Search size={18} className="ml-3 shrink-0 text-stone-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ค้นหา 'งานแฟร์' หรือ 'ร้านอาหาร'..."
+              className="w-full bg-transparent px-1 py-2 text-sm text-stone-700 outline-none placeholder:text-stone-400"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <button className="shrink-0 rounded-full bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">
+              ค้นหา
+            </button>
+          </div>
+
+          <div className="relative z-10 flex flex-wrap justify-center gap-2">
+            {CATEGORIES.map((c) => (
+              <FilterPill
+                key={c}
+                label={c}
+                active={category === c}
+                onClick={() => setCategory(c)}
+              />
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Upcoming fairs */}
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-stone-900">
+            งานแฟร์ที่กำลังจะมาถึง
+          </h2>
+          <Link
+            href="/fairs"
+            className="text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            ดูทั้งหมด
+          </Link>
+        </div>
+
+        {fairs.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
+            ไม่พบงานแฟร์ที่ตรงกับการค้นหาของคุณ
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {fairs.map((fair) => (
+              <FairCard key={fair.id} fair={fair} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recommended shops */}
+      <section className="mx-auto max-w-6xl px-6 pb-16">
+        <h2 className="mb-5 text-xl font-bold text-stone-900">
+          ร้านค้าแนะนำ
+        </h2>
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+          {RECOMMENDED_SHOPS.map((shop) => (
+            <RecommendedShopCard
+              key={shop.id}
+              name={shop.name}
+              category={shop.category}
+              icon={shop.icon}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
