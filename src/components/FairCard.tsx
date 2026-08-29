@@ -35,7 +35,7 @@ export default function FairCard({ fair }: { fair: Fair }) {
 
         <Link
           href={`/fairs/${fair.id}`}
-          className="mt-2 flex w-full items-center justify-center rounded-full bg-brand-700 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800"
+          className="mt-2 flex w-full items-center justify-center rounded-full bg-orange-700 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800"
         >
           ดูร้านค้า
         </Link>

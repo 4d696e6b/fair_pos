@@ -1,9 +1,10 @@
-import SiteHeader from "@/components/SiteHeader";
+
+import Header from "@/components/Header";
 
 export default function HistoryPage() {
   return (
     <div>
-      <SiteHeader />
+      <Header variant="site" />
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
         <h1 className="text-xl font-bold text-stone-900">ประวัติการสั่งซื้อ</h1>
         <p className="mt-2 text-sm text-stone-400">

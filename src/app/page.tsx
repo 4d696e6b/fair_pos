@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import SiteHeader from "@/components/SiteHeader";
+import Header from "@/components/Header";
 import FilterPill from "@/components/FilterPill";
 import FairCard from "@/components/FairCard";
 import RecommendedShopCard from "@/components/RecommendedShopCard";
@@ -32,7 +32,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <SiteHeader />
+      <Header variant="site" />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -63,7 +63,7 @@ export default function HomePage() {
               placeholder="ค้นหา 'งานแฟร์' หรือ 'ร้านอาหาร'..."
               className="w-full bg-transparent px-1 py-2 text-sm text-stone-700 outline-none placeholder:text-stone-400"
             />
-            <button className="shrink-0 rounded-full bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">
+            <button className="shrink-0 cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800">
               ค้นหา
             </button>
           </div>
@@ -89,7 +89,7 @@ export default function HomePage() {
           </h2>
           <Link
             href="/fairs"
-            className="text-sm font-medium text-brand-600 hover:text-brand-700"
+            className="text-sm font-medium text-orange-600 hover:text-orange-700"
           >
             ดูทั้งหมด
           </Link>
@@ -109,7 +109,7 @@ export default function HomePage() {
       </section>
 
       {/* Recommended shops */}
-      <section className="mx-auto max-w-6xl px-6 pb-16">
+      {/* <section className="mx-auto max-w-6xl px-6 pb-16">
         <h2 className="mb-5 text-xl font-bold text-stone-900">
           ร้านค้าแนะนำ
         </h2>
@@ -123,7 +123,7 @@ export default function HomePage() {
             />
           ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

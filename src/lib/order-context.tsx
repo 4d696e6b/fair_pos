@@ -15,6 +15,7 @@ type OrderContextValue = {
   cart: CartLine[];
   addItem: (item: MenuItem) => void;
   updateQty: (itemId: string, qty: number) => void;
+  updateNote: (itemId: string, note: string) => void;
   clearCart: () => void;
   subtotal: number;
   tax: number;
@@ -64,6 +65,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateNote = (itemId: string, note: string) => {
+    setCart((prev) =>
+      prev.map((line) =>
+        line.item.id === itemId ? { ...line, note: note || undefined } : line
+      )
+    );
+  };
+  
   const clearCart = () => setCart([]);
 
   const subtotal = useMemo(
@@ -102,6 +111,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         cart,
         addItem,
         updateQty,
+        updateNote,
         clearCart,
         subtotal,
         tax,

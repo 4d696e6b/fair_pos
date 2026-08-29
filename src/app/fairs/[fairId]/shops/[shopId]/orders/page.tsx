@@ -27,7 +27,7 @@ export default function ShopOrdersPage({
         <p className="text-stone-500">คุณยังไม่มีออเดอร์ที่กำลังดำเนินการ</p>
         <Link
           href={`/fairs/${fairId}/shops/${shopId}`}
-          className="mt-4 inline-block rounded-full bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
+          className="mt-4 inline-block rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-800"
         >
           ไปที่เมนูอาหาร
         </Link>
@@ -42,7 +42,7 @@ export default function ShopOrdersPage({
       {/* Status card */}
       <div className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
         <p className="text-center text-xs text-stone-400">หมายเลขคิวของคุณ</p>
-        <p className="text-center text-4xl font-extrabold text-brand-700">
+        <p className="text-center text-4xl font-extrabold text-orange-700">
           {order.queueNumber}
         </p>
 
@@ -62,7 +62,7 @@ export default function ShopOrdersPage({
             {STAGES.map((s, i) => (
               <span
                 key={s.key}
-                className={i <= stageIndex ? "text-brand-700" : ""}
+                className={i <= stageIndex ? "text-orange-700" : ""}
               >
                 {s.label}
               </span>

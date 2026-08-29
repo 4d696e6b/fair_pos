@@ -47,7 +47,7 @@ export const SHOPS: Shop[] = [
     icon: "🍳",
     boothNumber: "A-08",
     image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop",
+      "https://tecnogasthai.com/wp-content/uploads/2022/07/pic-01-3.png",
   },
   {
     id: "winter-cafe",
@@ -88,9 +88,9 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: "khao-pad", shopId: "nai-jod", name: "ข้าวผัด", price: 50, category: "เมนูหลัก", image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=400&auto=format&fit=crop" },
   { id: "pad-thai-goong", shopId: "nai-jod", name: "ผัดไทยกุ้งสด", price: 60, category: "เมนูหลัก", image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?q=80&w=400&auto=format&fit=crop" },
   { id: "poo-pad-pong", shopId: "nai-jod", name: "ปูผัดผงกะหรี่", price: 70, category: "เมนูหลัก", image: "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab?q=80&w=400&auto=format&fit=crop" },
-  { id: "muek-pad-khai-kem", shopId: "nai-jod", name: "หมึกผัดไข่เค็ม", price: 70, category: "เมนูหลัก", image: "https://images.unsplash.com/photo-1625938144870-42b6c7a4d0e1?q=80&w=400&auto=format&fit=crop" },
+  { id: "muek-pad-khai-kem", shopId: "nai-jod", name: "หมึกผัดไข่เค็ม", price: 70, category: "เมนูหลัก", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiZ5fy2WbGIPdf8kfkosKdWJNjHlfdTJx7i6oxLCbH37fyuHBM4aOM5Ag&s=10" },
   { id: "tuan-saep", shopId: "nai-jod", name: "เต๋าแซ่บ", price: 80, category: "เมนูหลัก", image: "https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=400&auto=format&fit=crop" },
-  { id: "kai-jeaw", shopId: "nai-jod", name: "ไข่เจียวหมูสับ", price: 40, category: "ของทานเล่น", image: "https://images.unsplash.com/photo-1607103058027-4c5b0e1a3f4c?q=80&w=400&auto=format&fit=crop" },
+  { id: "roti", shopId: "nai-jod", name: "โรตี", price: 40, category: "ของทานเล่น", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTg5Jp8XcCMt5ZcC7gGYTO-HiGxABQhimsUrv8YGkHq4g&s=10" },
   { id: "por-pia", shopId: "nai-jod", name: "ปอเปี๊ยะทอด", price: 45, category: "ของทานเล่น", image: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=400&auto=format&fit=crop" },
   { id: "cha-yen", shopId: "nai-jod", name: "ชาไทยเย็น", price: 35, category: "เครื่องดื่ม", image: "https://images.unsplash.com/photo-1558857563-b371033873b8?q=80&w=400&auto=format&fit=crop" },
   { id: "nam-manao", shopId: "nai-jod", name: "น้ำมะนาว", price: 30, category: "เครื่องดื่ม", image: "https://images.unsplash.com/photo-1621263764928-df1444c5e859?q=80&w=400&auto=format&fit=crop" },

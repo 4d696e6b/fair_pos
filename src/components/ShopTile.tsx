@@ -14,7 +14,7 @@ export default function ShopTile({
       href={`/fairs/${fairId}/shops/${shop.id}`}
       className="group overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm transition hover:shadow-md"
     >
-      <div className="relative h-28 w-full overflow-hidden">
+      <div className="relative h-28 cursor-pointer w-full overflow-hidden">
         <Image
           src={shop.image}
           alt={shop.name}
