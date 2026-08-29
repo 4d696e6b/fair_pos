@@ -1,11 +1,11 @@
-import SiteHeader from "@/components/SiteHeader";
+import Header from "@/components/Header";
 import FairCard from "@/components/FairCard";
 import { FAIRS } from "@/lib/mock-data";
 
 export default function FairsPage() {
   return (
     <div>
-      <SiteHeader />
+      <Header variant="site" />
       <div className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="mb-6 text-xl font-bold text-stone-900">
           งานแฟร์ทั้งหมด
