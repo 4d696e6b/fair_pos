@@ -33,7 +33,6 @@ export default function ShopLayout({
             { label: fair.name, href: `/fairs/${fairId}` },
             { label: shop.name, active: true },
           ]}
-          showSettings
           tabs={
             <ShopTabs
               isOrdersTab={isOrdersTab}
