@@ -1,22 +1,22 @@
-"use client";
+// "use client";
 
-import { useRouter } from "next/navigation";
-import AuthPageShell from "../components/auth-page-shell";
-import RegisterForm from "./register-form";
+// import { useRouter } from "next/navigation";
+// import AuthPageShell from "../components/auth-page-shell";
+// import RegisterForm from "./register-form";
 
-export default function RegisterPage() {
-  const router = useRouter();
+// export default function RegisterPage() {
+//   const router = useRouter();
 
-  return (
-    <AuthPageShell
-      title="สมัครสมาชิก"
-      subtitle="สร้างบัญชีเพื่อบันทึกออเดอร์ของคุณ"
-    >
-      <RegisterForm
-        onSuccess={() => {
-          router.push("/verify-email");
-        }}
-      />
-    </AuthPageShell>
-  );
-}
+//   return (
+//     <AuthPageShell
+//       title="สมัครสมาชิก"
+//       subtitle="สร้างบัญชีเพื่อบันทึกออเดอร์ของคุณ"
+//     >
+//       <RegisterForm
+//         onSuccess={() => {
+//           router.push("/verify-email");
+//         }}
+//       />
+//     </AuthPageShell>
+//   );
+// }

@@ -1,13 +1,14 @@
 "use client";
 
 import { AuthError, register } from "@/features/auth";
-import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import { FormEvent, useState } from "react";
 
 const inputClass =
   "w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
 
 export default function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
+  const { openLogin } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,12 +119,13 @@ export default function RegisterForm({ onSuccess }: { onSuccess?: () => void }) 
 
       <p className="pt-1 text-center text-sm text-stone-500">
         มีบัญชีอยู่แล้ว?{" "}
-        <Link
-          href="/login"
-          className="font-medium text-orange-600 hover:text-orange-700"
+        <button
+          type="button"
+          onClick={openLogin}
+          className="cursor-pointer font-medium text-orange-600 hover:text-orange-700"
         >
           เข้าสู่ระบบ
-        </Link>
+        </button>
       </p>
     </form>
   );

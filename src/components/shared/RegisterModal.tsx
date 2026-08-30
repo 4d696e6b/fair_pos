@@ -2,14 +2,14 @@
 
 import { X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import LoginForm from "@/app/(auth)/login/login-form";
+import RegisterForm from "@/app/(auth)/register/register-form";
 import { useRouter } from "next/navigation";
 
-export default function LoginModal() {
+export default function RegisterModal() {
   const { authModal, closeAuthModal } = useAuth();
   const router = useRouter();
 
-  if (authModal !== "login") return null;
+  if (authModal !== "register") return null;
 
   return (
     <div
@@ -28,24 +28,14 @@ export default function LoginModal() {
           <X size={18} />
         </button>
 
-        <img
-          src="/logo.png"
-          alt="logo"
-          className="mx-auto h-28 w-28 object-cover"
-        />
-
-        <h2 className="text-xl font-bold text-orange-600">Fair POS</h2>
+        <h2 className="text-xl font-bold text-orange-600">สมัครสมาชิก</h2>
         <p className="mt-1 text-sm text-stone-400">
-          ค้นหาและสั่งอาหารจากงานแฟร์ใกล้คุณ
+          สร้างบัญชีเพื่อบันทึกออเดอร์ของคุณ
         </p>
 
         <div className="mx-auto my-5 h-px w-16 bg-orange-400" />
 
-        <p className="mb-4 text-sm text-stone-500">
-          เข้าสู่ระบบเพื่อบันทึกออเดอร์ของคุณ
-        </p>
-
-        <LoginForm
+        <RegisterForm
           onSuccess={() => {
             closeAuthModal();
             router.refresh();

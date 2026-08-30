@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthError, login, loginWithGoogle } from "@/features/auth";
-import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import { FormEvent, useState } from "react";
 
 const inputClass =
@@ -13,6 +13,7 @@ const SILENT_CODES = new Set([
 ]);
 
 export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
+  const { openRegister, openForgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -92,12 +93,13 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         </label>
 
         <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-xs font-medium text-orange-600 hover:text-orange-700"
+          <button
+            type="button"
+            onClick={openForgotPassword}
+            className="cursor-pointer text-xs font-medium text-orange-600 hover:text-orange-700"
           >
             ลืมรหัสผ่าน?
-          </Link>
+          </button>
         </div>
 
         {error ? (
@@ -133,12 +135,13 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <p className="mt-4 text-center text-sm text-stone-500">
         ยังไม่มีบัญชี?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-orange-600 hover:text-orange-700"
+        <button
+          type="button"
+          onClick={openRegister}
+          className="cursor-pointer font-medium text-orange-600 hover:text-orange-700"
         >
           สมัครสมาชิก
-        </Link>
+        </button>
       </p>
     </div>
   );
