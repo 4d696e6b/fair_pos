@@ -13,7 +13,7 @@ export default function CartSummary({
 }) {
   return (
     <>
-      <div className="mt-5 space-y-1 border-t border-stone-100 pt-4 text-sm">
+      <div className="mt-5 space-y-1 border-t border-stone-200 pt-4 text-sm">
         <div className="flex justify-between text-stone-500">
           <span>ยอดรวม</span>
           <span>฿{subtotal.toFixed(2)}</span>

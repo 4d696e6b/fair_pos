@@ -22,7 +22,7 @@ export default function CartSidebar({
   onCheckout: () => void;
 }) {
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-stone-100 bg-white p-5 shadow-sm lg:w-80">
+    <aside className="w-full shrink-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm lg:w-80">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-bold text-stone-900">รายการอาหาร</h2>
         {cart.length > 0 && (
