@@ -12,6 +12,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updatePassword,
   updateProfile,
@@ -20,7 +21,7 @@ import {
   type User as FirebaseUser,
 } from "firebase/auth";
 
-import { auth } from "@/lib/firebase";
+import { auth, googleProvider } from "@/lib/firebase";
 import type { User } from "@/types/user";
 
 import type {
@@ -42,7 +43,7 @@ function requireFirebaseUser(): FirebaseUser {
   const user = auth.currentUser;
 
   if (!user) {
-    throw new AuthError("You must be signed in to continue.", "auth/unauthenticated");
+    throw new AuthError("กรุณาเข้าสู่ระบบก่อน", "auth/unauthenticated");
   }
 
   return user;
@@ -58,7 +59,7 @@ async function loadProfile(firebaseUser: FirebaseUser): Promise<User> {
   const profile = await getUserProfile(firebaseUser.uid);
 
   if (!profile) {
-    throw new AuthError("Account profile is missing.", "auth/profile-not-found");
+    throw new AuthError("ไม่พบข้อมูลโปรไฟล์ของบัญชีนี้", "auth/profile-not-found");
   }
 
   if (profile.isVerified !== firebaseUser.emailVerified) {
@@ -67,6 +68,32 @@ async function loadProfile(firebaseUser: FirebaseUser): Promise<User> {
   }
 
   return profile;
+}
+
+async function ensureProfile(firebaseUser: FirebaseUser): Promise<User> {
+  const profile = await getUserProfile(firebaseUser.uid);
+
+  if (profile) {
+    if (profile.isVerified !== firebaseUser.emailVerified) {
+      await syncVerifiedFlag(firebaseUser);
+      return { ...profile, isVerified: firebaseUser.emailVerified };
+    }
+
+    return profile;
+  }
+
+  const email = firebaseUser.email ?? "";
+  const username =
+    firebaseUser.displayName?.trim() ||
+    email.split("@")[0] ||
+    "user";
+
+  return createUserProfile({
+    id: firebaseUser.uid,
+    username,
+    email,
+    isVerified: firebaseUser.emailVerified,
+  });
 }
 
 export function getCurrentFirebaseUser(): FirebaseUser | null {
@@ -100,7 +127,7 @@ export async function register({ username, email, password }: RegisterInput): Pr
     const trimmedUsername = username.trim();
 
     if (!trimmedUsername) {
-      throw new AuthError("Username is required.", "auth/missing-username");
+      throw new AuthError("กรุณากรอกชื่อผู้ใช้", "auth/missing-username");
     }
 
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -127,7 +154,16 @@ export async function register({ username, email, password }: RegisterInput): Pr
 export async function login({ email, password }: LoginInput): Promise<User> {
   try {
     const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    return await loadProfile(credential.user);
+    return await ensureProfile(credential.user);
+  } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
+export async function loginWithGoogle(): Promise<User> {
+  try {
+    const credential = await signInWithPopup(auth, googleProvider);
+    return await ensureProfile(credential.user);
   } catch (error) {
     throw toAuthError(error);
   }
@@ -210,7 +246,7 @@ export async function updateUsername({ username }: UpdateProfileInput): Promise<
     const trimmedUsername = username.trim();
 
     if (!trimmedUsername) {
-      throw new AuthError("Username is required.", "auth/missing-username");
+      throw new AuthError("กรุณากรอกชื่อผู้ใช้", "auth/missing-username");
     }
 
     const firebaseUser = requireFirebaseUser();
@@ -227,7 +263,7 @@ async function reauthenticate(currentPassword: string): Promise<FirebaseUser> {
   const email = firebaseUser.email;
 
   if (!email) {
-    throw new AuthError("This account has no email to reauthenticate.", "auth/missing-email");
+    throw new AuthError("บัญชีนี้ไม่มีอีเมลสำหรับยืนยันตัวตน", "auth/missing-email");
   }
 
   const credential = EmailAuthProvider.credential(email, currentPassword);

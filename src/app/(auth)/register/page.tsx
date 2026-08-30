@@ -1,9 +1,22 @@
-import React from 'react'
+"use client";
 
-const RegisterPage = () => {
+import { useRouter } from "next/navigation";
+import AuthPageShell from "@/features/auth/components/auth-page-shell";
+import RegisterForm from "@/features/auth/components/register-form";
+
+export default function RegisterPage() {
+  const router = useRouter();
+
   return (
-    <div>RegisterPage</div>
-  )
+    <AuthPageShell
+      title="สมัครสมาชิก"
+      subtitle="สร้างบัญชีเพื่อบันทึกออเดอร์ของคุณ"
+    >
+      <RegisterForm
+        onSuccess={() => {
+          router.push("/verify-email");
+        }}
+      />
+    </AuthPageShell>
+  );
 }
-
-export default RegisterPage

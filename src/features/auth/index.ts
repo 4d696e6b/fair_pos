@@ -11,6 +11,7 @@ export {
   getCurrentUser,
   getPasswordResetEmail,
   login,
+  loginWithGoogle,
   logout,
   observeAuthState,
   refreshCurrentUser,

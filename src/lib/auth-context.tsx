@@ -7,13 +7,9 @@ import {
   useState,
   ReactNode,
 } from "react";
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  User,
-} from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
+import { onAuthStateChanged, signOut as firebaseSignOut, User } from "firebase/auth";
+import { auth } from "./firebase";
+import { usePathname } from "next/navigation";
 
 type AuthContextValue = {
   user: User | null;
@@ -21,7 +17,6 @@ type AuthContextValue = {
   isLoginOpen: boolean;
   openLogin: () => void;
   closeLogin: () => void;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -31,19 +26,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoginOpen, setLoginOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    setLoginOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
       setLoading(false);
+      if (nextUser) {
+        setLoginOpen(false);
+      }
     });
     return unsubscribe;
   }, []);
-
-  const signInWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
-    setLoginOpen(false);
-  };
 
   const signOut = () => firebaseSignOut(auth);
 
@@ -55,7 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoginOpen,
         openLogin: () => setLoginOpen(true),
         closeLogin: () => setLoginOpen(false),
-        signInWithGoogle,
         signOut,
       }}
     >

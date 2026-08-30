@@ -1,9 +1,13 @@
-import React from 'react'
+import { Suspense } from "react";
+import AuthPageShell from "@/features/auth/components/auth-page-shell";
+import VerifyEmailForm from "@/features/auth/components/verify-email-form";
 
-const VerifyEmailPage = () => {
+export default function VerifyEmailPage() {
   return (
-    <div>VerifyEmailPage</div>
-  )
+    <AuthPageShell title="ยืนยันอีเมล" subtitle="ยืนยันอีเมลเพื่อใช้งานบัญชีให้ครบ">
+      <Suspense fallback={<p className="text-center text-sm text-stone-500">กำลังโหลด...</p>}>
+        <VerifyEmailForm />
+      </Suspense>
+    </AuthPageShell>
+  );
 }
-
-export default VerifyEmailPage
