@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Pencil, Store } from "lucide-react";
+import { LogOut, Pencil, Store, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function ProfileSidebar({
   name,
   email,
   avatarUrl,
+  merchantMode,
   onSwitchToMerchant,
 }: {
   name: string;
   email: string;
   avatarUrl?: string;
+  merchantMode: boolean;
   onSwitchToMerchant: () => void;
 }) {
   const { signOut } = useAuth();
@@ -62,8 +64,8 @@ export default function ProfileSidebar({
           onClick={onSwitchToMerchant}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800"
         >
-          <Store size={16} />
-          สลับไปยังโหมดร้านค้า
+          {merchantMode ? <User size={16} /> : <Store size={16} />}
+          {merchantMode ? "กลับสู่โหมดปกติ" : "สลับไปยังโหมดร้านค้า"}
         </button>
       </div>
     </div>

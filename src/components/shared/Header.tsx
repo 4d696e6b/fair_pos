@@ -28,6 +28,8 @@ const SITE_NAV = [
   { href: "/history", label: "ประวัติ" },
 ];
 
+const MERCHANT_NAV = { href: "/merchant", label: "ร้านค้า" };
+
 function HeaderActions({ showSettings }: { showSettings?: boolean }) {
   const pathname = usePathname();
   const { user, openLogin } = useAuth();
@@ -69,6 +71,8 @@ function HeaderActions({ showSettings }: { showSettings?: boolean }) {
 
 export default function Header(props: HeaderProps) {
   const pathname = usePathname();
+  const { merchantMode } = useAuth();
+  const siteNav = merchantMode ? [...SITE_NAV, MERCHANT_NAV] : SITE_NAV;
 
   if (props.variant === "site") {
     return (
@@ -83,7 +87,7 @@ export default function Header(props: HeaderProps) {
         </Link>
 
         <nav className="absolute left-1/2 top-0 flex h-16 -translate-x-1/2 items-center gap-6 text-sm font-medium">
-          {SITE_NAV.map(({ href, label }) => {
+          {siteNav.map(({ href, label }) => {
             const active = pathname === href;
             return (
               <Link
@@ -114,7 +118,7 @@ export default function Header(props: HeaderProps) {
       <div className="flex h-16 items-center gap-2 text-sm">
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-1 pr-3 font-medium text-stone-500 transition hover:text-stone-800"
+          className="flex items-center gap-1 pr-3 font-medium text-stone-500 transition hover:text-stone-800 cursor-pointer"
         >
           <ChevronLeft size={18} />
           Back
