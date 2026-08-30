@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Store as StoreIcon } from "lucide-react";
+import { Calendar, MapPin, Plus, Store as StoreIcon, Tag } from "lucide-react";
 import Header from "@/components/shared/Header";
 import { useStore } from "@/lib/store-context";
 import CreateStoreModal from "./components/CreateStoreModal";
@@ -35,18 +35,44 @@ export default function MerchantStoresPage() {
             <Link
               key={store.id}
               href={`/merchant/${store.id}/orders`}
-              className="rounded-2xl border border-stone-100 bg-white p-6 text-left shadow-sm transition hover:border-orange-200 hover:shadow-md"
+              className="overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm transition hover:border-orange-200 hover:shadow-md"
             >
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-                <StoreIcon size={22} />
+              <div className="h-36 w-full bg-stone-100">
+                {store.imageUrl ? (
+                  <img
+                    src={store.imageUrl}
+                    alt={store.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-stone-300">
+                    <StoreIcon size={32} />
+                  </div>
+                )}
               </div>
-              <p className="font-bold text-stone-900">{store.name}</p>
-              <p className="mt-1 text-xs text-stone-400">{store.category}</p>
-              {store.description ? (
-                <p className="mt-2 line-clamp-2 text-sm text-stone-500">
-                  {store.description}
-                </p>
-              ) : null}
+
+              <div className="p-5">
+                <p className="font-bold text-stone-900">{store.name}</p>
+
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-stone-500">
+                  <Tag size={13} className="shrink-0 text-stone-400" />
+                  {store.category}
+                </div>
+
+                {store.fair ? (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-stone-500">
+                    <Calendar size={13} className="shrink-0 text-stone-400" />
+                    {store.fair}
+                  </div>
+                ) : null}
+
+                {store.location ? (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-stone-500">
+                    <MapPin size={13} className="shrink-0 text-stone-400" />
+                    {store.location}
+                  </div>
+                ) : null}
+              </div>
             </Link>
           ))}
 

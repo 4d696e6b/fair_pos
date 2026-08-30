@@ -10,6 +10,9 @@ export type Store = {
   category: StoreCategory;
   description?: string;
   createdAt: string;
+  imageUrl?: string;
+  location?: string;
+  fair?: string;
 };
 
 type StoreContextValue = {
@@ -18,6 +21,9 @@ type StoreContextValue = {
     name: string;
     category: StoreCategory;
     description?: string;
+    imageUrl?: string;
+    location?: string;
+    fair?: string;
   }) => Store;
 };
 
@@ -30,12 +36,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     name,
     category,
     description,
+    imageUrl,
+    location,
+    fair,
   }) => {
     const newStore: Store = {
       id: crypto.randomUUID(),
       name,
       category,
       description,
+      imageUrl,
+      location,
+      fair,
       createdAt: new Date().toLocaleDateString("th-TH"),
     };
     setStores((prev) => [...prev, newStore]);
