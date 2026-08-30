@@ -22,6 +22,8 @@ type AuthContextValue = {
   openForgotPassword: () => void;
   closeAuthModal: () => void;
   signOut: () => Promise<void>;
+  merchantMode: boolean;
+  toggleMerchantMode: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authModal, setAuthModal] = useState<AuthModal>(null);
+  const [merchantMode, setMerchantMode] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -47,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signOut = () => firebaseSignOut(auth);
+  const signOut = () => {
+    setMerchantMode(false);
+    return firebaseSignOut(auth);
+  };
 
   return (
     <AuthContext.Provider
@@ -60,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         openForgotPassword: () => setAuthModal("forgot-password"),
         closeAuthModal: () => setAuthModal(null),
         signOut,
+        merchantMode,
+        toggleMerchantMode: () => setMerchantMode((prev) => !prev),
       }}
     >
       {children}

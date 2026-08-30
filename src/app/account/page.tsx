@@ -9,7 +9,7 @@ import NotificationsCard, { NotificationPrefs } from "./components/Notifications
 import { useAuth } from "@/lib/auth-context";
 
 export default function AccountPage() {
-  const { user, loading, openLogin } = useAuth();
+  const { user, loading, openLogin, merchantMode, toggleMerchantMode } = useAuth();
   const router = useRouter();
   const [info, setInfo] = useState<PersonalInfo>({
     firstName: "",
@@ -51,7 +51,8 @@ export default function AccountPage() {
             name={fullName}
             email={email}
             avatarUrl={user.photoURL ?? undefined}
-            onSwitchToMerchant={() => {}}
+            merchantMode={merchantMode}
+            onSwitchToMerchant={toggleMerchantMode}
           />
 
           <div className="space-y-6">

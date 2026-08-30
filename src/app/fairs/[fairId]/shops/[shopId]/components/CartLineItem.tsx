@@ -23,7 +23,7 @@ export default function CartLineItem({
   };
 
   return (
-    <div className="flex items-start justify-between gap-2 rounded-xl border border-stone-100 p-3">
+    <div className="flex items-start justify-between gap-2 rounded-xl border border-stone-200 p-3">
       <div className="flex items-start gap-3">
         <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
           <Image
@@ -82,7 +82,7 @@ export default function CartLineItem({
         >
           {line.qty === 1 ? <Trash2 size={12} /> : <Minus size={12} />}
         </button>
-        <span className="w-4 text-center text-sm font-medium">{line.qty}</span>
+        <span className="w-4 text-center text-sm font-medium text-stone-500">{line.qty}</span>
         <button
           onClick={() => onUpdateQty(line.item.id, line.qty + 1)}
           aria-label="เพิ่มจำนวน"

@@ -20,7 +20,7 @@ type OrderContextValue = {
   subtotal: number;
   tax: number;
   total: number;
-  order: Order | null;
+  orders: Order[];
   placeOrder: (fairId: string, shopId: string, boothNumber: string) => Order;
 };
 
@@ -42,7 +42,7 @@ function randomRefCode() {
 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [order, setOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const addItem = (item: MenuItem) => {
     setCart((prev) => {
@@ -72,7 +72,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       )
     );
   };
-  
+
   const clearCart = () => setCart([]);
 
   const subtotal = useMemo(
@@ -100,7 +100,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       }),
       estimatedMinutes: "5 - 10 นาที",
     };
-    setOrder(newOrder);
+    setOrders((prev) => [...prev, newOrder]);
     clearCart();
     return newOrder;
   };
@@ -116,7 +116,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         subtotal,
         tax,
         total,
-        order,
+        orders,
         placeOrder,
       }}
     >
