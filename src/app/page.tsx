@@ -4,10 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import Header from "@/components/Header";
-import FilterPill from "@/components/FilterPill";
-import FairCard from "@/components/FairCard";
-import RecommendedShopCard from "@/components/RecommendedShopCard";
+import Header from "@/components/shared/Header";
+import FilterPill from "@/components/shared/FilterPill";
+import FairCard from "@/components/shared/FairCard";
+import RecommendedShopCard from "./components/RecommendedShopCard";
 import { FAIRS, RECOMMENDED_SHOPS } from "@/lib/mock-data";
 import { FairCategory } from "@/lib/types";
 

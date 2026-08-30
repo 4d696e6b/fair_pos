@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import FilterPill from "@/components/FilterPill";
+import FilterPill from "@/components/shared/FilterPill";
 
 const CATEGORIES = ["ทั้งหมด", "อาหารไทย", "อาหารตะวันตก", "เครื่องดื่ม", "ของหวาน"];
 

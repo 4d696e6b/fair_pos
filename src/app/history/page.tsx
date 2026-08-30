@@ -1,5 +1,5 @@
 
-import Header from "@/components/Header";
+import Header from "@/components/shared/Header";
 
 export default function HistoryPage() {
   return (

@@ -1,5 +1,5 @@
-import Header from "@/components/Header";
-import FairCard from "@/components/FairCard";
+import Header from "@/components/shared/Header";
+import FairCard from "@/components/shared/FairCard";
 import { FAIRS } from "@/lib/mock-data";
 
 export default function FairsPage() {

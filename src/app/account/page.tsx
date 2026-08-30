@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Header from "@/components/Header";
-import ProfileSidebar from "@/components/account/ProfileSidebar";
-import PersonalInfoCard, { PersonalInfo } from "@/components/account/PersonalInfoCard";
-import NotificationsCard, { NotificationPrefs } from "@/components/account/NotificationsCard";
+import Header from "@/components/shared/Header";
+import ProfileSidebar from "./components/ProfileSidebar";
+import PersonalInfoCard, { PersonalInfo } from "./components/PersonalInfoCard";
+import NotificationsCard, { NotificationPrefs } from "./components/NotificationsCard";
 
 export default function AccountPage() {
   const [info, setInfo] = useState<PersonalInfo>({

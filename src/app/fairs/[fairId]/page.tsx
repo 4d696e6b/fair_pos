@@ -2,10 +2,10 @@
 
 import { use } from "react";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
-import FairBanner from "@/components/fairs/FairBanner";
-import ShopSearchFilter from "@/components/fairs/ShopSearchFilter";
-import ShopGrid from "@/components/fairs/ShopGrid";
+import Header from "@/components/shared/Header";
+import FairBanner from "./components/FairBanner";
+import ShopSearchFilter from "./components/ShopSearchFilter";
+import ShopGrid from "./components/ShopGrid";
 import { getFair, getShopsForFair } from "@/lib/mock-data";
 import { useShopFilter } from "@/lib/useShopFilter";
 

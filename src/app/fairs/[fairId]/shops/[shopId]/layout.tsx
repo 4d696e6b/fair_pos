@@ -3,8 +3,8 @@
 import { use } from "react";
 import { notFound, usePathname } from "next/navigation";
 import { OrderProvider } from "@/lib/order-context";
-import Header from "@/components/Header";
-import ShopTabs from "@/components/shops/ShopTabs";
+import Header from "@/components/shared/Header";
+import ShopTabs from "./components/ShopTabs";
 import { getFair, getShop } from "@/lib/mock-data";
 
 export default function ShopLayout({

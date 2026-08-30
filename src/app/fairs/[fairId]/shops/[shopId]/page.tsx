@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { getMenuForShop, getShop } from "@/lib/mock-data";
 import { useOrder } from "@/lib/order-context";
 import { MenuCategory } from "@/lib/types";
-import CategoryTabs from "@/components/shops/CategoryTabs";
-import MenuGrid from "@/components/shops/MenuGrid";
-import CartSidebar from "@/components/shops/CartSidebar";
+import CategoryTabs from "./components/CategoryTabs";
+import MenuGrid from "./components/MenuGrid";
+import CartSidebar from "./components/CartSidebar";
 
 const CATEGORIES: MenuCategory[] = [
   "เมนูหลัก",

@@ -1,5 +1,5 @@
 import { Shop } from "@/lib/types";
-import ShopTile from "@/components/ShopTile";
+import ShopTile from "./ShopTile";
 
 export default function ShopGrid({
   fairId,

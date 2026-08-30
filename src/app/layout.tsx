@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import LoginModal from "@/components/auth/LoginModal";
+import LoginModal from "@/components/shared/LoginModal";
 
 export const metadata: Metadata = {
   title: "Fair POS",
