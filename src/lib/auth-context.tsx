@@ -11,12 +11,16 @@ import { onAuthStateChanged, signOut as firebaseSignOut, User } from "firebase/a
 import { auth } from "./firebase";
 import { usePathname } from "next/navigation";
 
+type AuthModal = "login" | "register" | "forgot-password" | null;
+
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  isLoginOpen: boolean;
+  authModal: AuthModal;
   openLogin: () => void;
-  closeLogin: () => void;
+  openRegister: () => void;
+  openForgotPassword: () => void;
+  closeAuthModal: () => void;
   signOut: () => Promise<void>;
 };
 
@@ -25,11 +29,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoginOpen, setLoginOpen] = useState(false);
+  const [authModal, setAuthModal] = useState<AuthModal>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    setLoginOpen(false);
+    setAuthModal(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -37,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextUser);
       setLoading(false);
       if (nextUser) {
-        setLoginOpen(false);
+        setAuthModal(null);
       }
     });
     return unsubscribe;
@@ -50,9 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
-        isLoginOpen,
-        openLogin: () => setLoginOpen(true),
-        closeLogin: () => setLoginOpen(false),
+        authModal,
+        openLogin: () => setAuthModal("login"),
+        openRegister: () => setAuthModal("register"),
+        openForgotPassword: () => setAuthModal("forgot-password"),
+        closeAuthModal: () => setAuthModal(null),
         signOut,
       }}
     >
