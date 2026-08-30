@@ -1,11 +1,11 @@
 "use client";
 
-import { AuthError } from "../services/errors";
 import {
+  AuthError,
   completeEmailVerification,
   sendVerificationEmail,
-} from "../services/auth";
-import { useAuth } from "../hooks/use-auth";
+  useAuth,
+} from "@/features/auth";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";

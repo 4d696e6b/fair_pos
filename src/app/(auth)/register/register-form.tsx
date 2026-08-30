@@ -1,7 +1,6 @@
 "use client";
 
-import { AuthError } from "../services/errors";
-import { register } from "../services/auth";
+import { AuthError, register } from "@/features/auth";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 

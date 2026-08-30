@@ -1,11 +1,11 @@
 "use client";
 
-import { AuthError } from "../services/errors";
 import {
+  AuthError,
   completePasswordReset,
   getPasswordResetEmail,
   sendPasswordReset,
-} from "../services/auth";
+} from "@/features/auth";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";

@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import LoginForm from "@/features/auth/components/login-form";
+import LoginForm from "@/app/(auth)/login/login-form";
 import { useRouter } from "next/navigation";
 
 export default function LoginModal() {
