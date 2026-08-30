@@ -76,7 +76,7 @@ export default function Header(props: HeaderProps) {
 
   if (props.variant === "site") {
     return (
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-stone-100 bg-white px-6">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-stone-300 bg-white px-6">
         <Link href="/" className="flex items-center gap-2">
           <img
             src="/logo.png"
@@ -114,7 +114,7 @@ export default function Header(props: HeaderProps) {
   const router = useRouter();
 
   return (
-    <header className="relative sticky top-0 z-30 border-b border-stone-100 bg-white px-6">
+    <header className="relative sticky top-0 z-30 border-b border-stone-300 bg-white px-6">
       <div className="flex h-16 items-center gap-2 text-sm">
         <button
           onClick={() => router.push(backHref)}

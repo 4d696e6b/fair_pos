@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { StoreProvider } from "@/lib/store-context";
 import LoginModal from "@/components/shared/LoginModal";
 import RegisterModal from "@/components/shared/RegisterModal";
 import ForgotPasswordModal from "@/components/shared/ForgotPasswordModal";
@@ -17,10 +18,12 @@ export default function RootLayout({
     <html lang="th">
       <body className="min-h-screen bg-stone-50 font-sans antialiased">
         <AuthProvider>
-          {children}
-          <LoginModal />
-          <RegisterModal />
-          <ForgotPasswordModal />
+          <StoreProvider>
+            {children}
+            <LoginModal />
+            <RegisterModal />
+            <ForgotPasswordModal />
+          </StoreProvider>
         </AuthProvider>
       </body>
     </html>
