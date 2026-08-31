@@ -8,6 +8,9 @@ import ForgotPasswordModal from "@/components/shared/ForgotPasswordModal";
 
 export const metadata: Metadata = {
   title: "Fair POS",
+  icons: {
+    icon: '/logo_simple.png', 
+  },
   description: "ค้นหาและสั่งอาหารจากงานแฟร์ใกล้คุณ",
 };
 

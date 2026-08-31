@@ -63,8 +63,8 @@ export default function MerchantStoreLayout({ children }: { children: ReactNode 
         crumbs={[{ label: store?.name ?? "ร้านค้า", active: true }]}
       />
 
-      <div className="flex flex-1">
-        <aside className="flex w-64 shrink-0 flex-col border-r border-stone-200 bg-white px-4 py-6">
+      <div className="flex sticky flex-1">
+        <aside className="flex  w-64 shrink-0 flex-col border-r border-stone-200 bg-white px-4 py-6">
           <nav className="flex-1 space-y-6">
             {navGroups.map((group) => (
               <div key={group.title}>
