@@ -33,7 +33,7 @@ export default function CartSummary({
         disabled={disabled}
         className="mt-4 w-full rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800 cursor-pointer disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
       >
-        ชำระเงิน
+        เพิ่มออเดอร์
       </button>
     </>
   );

@@ -25,7 +25,7 @@ function getNavGroups(storeId: string): NavGroup[] {
       title: "การดำเนินงาน",
       items: [
         { href: `/merchant/${storeId}/orders`, label: "ออเดอร์", icon: ClipboardList },
-        { href: `/merchant/${storeId}/tables`, label: "โต๊ะ + การชำระเงิน", icon: LayoutGrid },
+        { href: `/merchant/${storeId}/tables`, label: "จัดการโต๊ะ", icon: LayoutGrid },
       ],
     },
     {
@@ -80,7 +80,7 @@ export default function MerchantStoreLayout({ children }: { children: ReactNode 
                           "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition " +
                           (active
                             ? "bg-orange-700 text-white"
-                            : "text-stone-600 hover:bg-stone-50")
+                            : "text-stone-600 hover:bg-stone-100")
                         }
                       >
                         <Icon size={17} />

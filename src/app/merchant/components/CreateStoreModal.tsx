@@ -65,7 +65,7 @@ export default function CreateStoreModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl border border-orange-100 bg-white p-8 shadow-xl"
+        className="relative w-full max-w-md rounded-2xl border border-orange-100 bg-white p-8 shadow-xl animate-popUp"
       >
         <button
           onClick={handleClose}

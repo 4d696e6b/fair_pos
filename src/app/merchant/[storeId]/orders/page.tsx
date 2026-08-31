@@ -1,26 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Printer } from "lucide-react";
+import OrderCard, { KitchenOrder, OrderStatus } from "./components/OrderCard";
+import OrderConfirmModal, { OrderConfirmAction } from "./components/OrderConfirmModal";
 
-type OrderStatus = "pending" | "completed";
-
-type KitchenOrder = {
-  id: string;
-  table: string;
-  type: "dine-in" | "takeaway";
-  minutesAgo: number;
-  isNew?: boolean;
-  status: OrderStatus;
-  items: { qty: number; name: string; note?: string; done?: boolean }[];
-};
-
-const MOCK_ORDERS: KitchenOrder[] = [
+const INITIAL_ORDERS: KitchenOrder[] = [
   {
-    id: "#8423",
+    id: "#REF-53432-WY",
+    queue: "A844",
     table: "โต๊ะ 12",
     type: "dine-in",
-    minutesAgo: 24,
+    createdAt: new Date(Date.now() - 24 * 60_000).toISOString(),
     status: "pending",
     items: [
       { qty: 2, name: "หมูกะเพรา", note: "ไม่เผ็ด" },
@@ -29,22 +19,23 @@ const MOCK_ORDERS: KitchenOrder[] = [
     ],
   },
   {
-    id: "#8424",
+    id: "#REF-51072-WY",
     table: "สั่งกลับบ้าน A",
+    queue: "A824",
     type: "takeaway",
-    minutesAgo: 12,
+    createdAt: new Date(Date.now() - 12 * 60_000).toISOString(),
     status: "pending",
     items: [
-      { qty: 1, name: "ผัดไทยกุ้งสด", done: true },
+      { qty: 1, name: "ผัดไทยกุ้งสด" },
       { qty: 2, name: "แกงเขียวหวานไก่", note: "หน่อไม้เพิ่ม" },
     ],
   },
   {
-    id: "#8425",
+    id: "#REF-35489-WY",
     table: "โต๊ะ 4",
+    queue: "A823",
     type: "dine-in",
-    minutesAgo: 1,
-    isNew: true,
+    createdAt: new Date(Date.now() - 1 * 60_000).toISOString(),
     status: "pending",
     items: [
       { qty: 4, name: "ข้าวเหนียวมะม่วง" },
@@ -52,10 +43,11 @@ const MOCK_ORDERS: KitchenOrder[] = [
     ],
   },
   {
-    id: "#8420",
+    id: "#REF-34587-WY",
     table: "โต๊ะ 7",
+    queue: "A834",
     type: "dine-in",
-    minutesAgo: 40,
+    createdAt: new Date(Date.now() - 40 * 60_000).toISOString(),
     status: "completed",
     items: [{ qty: 2, name: "ข้าวผัดกุ้ง", done: true }],
   },
@@ -63,9 +55,36 @@ const MOCK_ORDERS: KitchenOrder[] = [
 
 export default function OrdersPage() {
   const [tab, setTab] = useState<OrderStatus>("pending");
-  const orders = MOCK_ORDERS.filter((o) => o.status === tab);
-  const pendingCount = MOCK_ORDERS.filter((o) => o.status === "pending").length;
-  const completedCount = MOCK_ORDERS.filter((o) => o.status === "completed").length;
+  const [allOrders, setAllOrders] = useState<KitchenOrder[]>(INITIAL_ORDERS);
+  const [pendingAction, setPendingAction] = useState<OrderConfirmAction>(null);
+
+  const orders = allOrders.filter((o) =>
+    tab === "pending" ? o.status === "pending" : o.status !== "pending",
+  );
+  const pendingCount = allOrders.filter((o) => o.status === "pending").length;
+  const doneCount = allOrders.filter((o) => o.status !== "pending").length;
+
+  const handleConfirm = () => {
+    if (!pendingAction) return;
+    const { orderId, type } = pendingAction;
+
+    setAllOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              isNew: false,
+              status: type === "complete" ? "completed" : "cancelled",
+              items:
+                type === "complete"
+                  ? o.items.map((item) => ({ ...item, done: true }))
+                  : o.items,
+            }
+          : o,
+      ),
+    );
+    setPendingAction(null);
+  };
 
   return (
     <div>
@@ -91,7 +110,7 @@ export default function OrdersPage() {
               (tab === "completed" ? "bg-orange-700 text-white" : "text-stone-500 hover:text-stone-800")
             }
           >
-            เสร็จสิ้น ({completedCount})
+            เสร็จสิ้น ({doneCount})
           </button>
         </div>
       </div>
@@ -101,70 +120,21 @@ export default function OrdersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {orders.map((order) => (
-            <div
+            <OrderCard
               key={order.id}
-              className={
-                "flex flex-col rounded-2xl border bg-white p-5 shadow-sm " +
-                (order.isNew ? "border-orange-300 ring-1 ring-orange-200" : "border-stone-100")
-              }
-            >
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <p className="font-bold text-stone-900">{order.table}</p>
-                  <p className="text-xs text-stone-400">
-                    ออเดอร์ {order.id} • {order.type === "dine-in" ? "ทานที่ร้าน" : "รับกลับบ้าน"}
-                  </p>
-                </div>
-                {order.isNew ? (
-                  <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                    ใหม่
-                  </span>
-                ) : order.status === "pending" ? (
-                  <span className="text-xs font-semibold text-red-500">{order.minutesAgo} น.</span>
-                ) : (
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
-                    เสร็จแล้ว
-                  </span>
-                )}
-              </div>
-
-              <ul className="flex-1 space-y-2 border-t border-stone-100 pt-3 text-sm">
-                {order.items.map((item, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span className={item.done ? "text-stone-300 line-through" : "text-stone-700"}>
-                      {item.qty}x {item.name}
-                    </span>
-                    {item.note ? (
-                      <span className="text-xs font-medium text-orange-600">{item.note}</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-
-              {order.status === "pending" ? (
-                <div className="mt-4 flex gap-2">
-                  {order.isNew ? (
-                    <>
-                      <button className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-stone-200 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-50">
-                        <Printer size={15} />
-                        พิมพ์บิล
-                      </button>
-                      <button className="flex-1 cursor-pointer rounded-full bg-orange-700 py-2 text-sm font-semibold text-white transition hover:bg-orange-800">
-                        เริ่มทำ
-                      </button>
-                    </>
-                  ) : (
-                    <button className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-emerald-600 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                      <Check size={15} />
-                      ทำเสร็จแล้ว
-                    </button>
-                  )}
-                </div>
-              ) : null}
-            </div>
+              order={order}
+              onRequestComplete={(id, queue) => setPendingAction({ orderId: id, queue, type: "complete" })}
+              onRequestCancel={(id, queue) => setPendingAction({ orderId: id, queue, type: "cancel" })}
+            />
           ))}
         </div>
       )}
+
+      <OrderConfirmModal
+        action={pendingAction}
+        onClose={() => setPendingAction(null)}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }

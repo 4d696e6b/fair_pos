@@ -57,7 +57,7 @@ export default function ForgotPasswordModal() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm rounded-2xl border border-orange-100 bg-white p-8 text-center shadow-xl"
+        className="relative w-full max-w-sm rounded-2xl border border-orange-100 bg-white p-8 text-center shadow-xl animate-popUp"
       >
         <button
           onClick={handleClose}
