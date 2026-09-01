@@ -10,7 +10,6 @@ import {
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/collections";
 import { firestore } from "@/lib/firebase";
-import { seedDemoCatalog } from "@/lib/seed-demo";
 import type { Fair, FairCategory } from "@/lib/types";
 
 function fairsCol() {
@@ -34,7 +33,6 @@ function toFair(id: string, data: Record<string, unknown>): Fair {
 }
 
 export async function listFairs(): Promise<Fair[]> {
-  await seedDemoCatalog();
   const snapshot = await getDocs(fairsCol());
   return snapshot.docs
     .map((item) => toFair(item.id, item.data()))
@@ -42,7 +40,6 @@ export async function listFairs(): Promise<Fair[]> {
 }
 
 export async function getFair(fairId: string): Promise<Fair | null> {
-  await seedDemoCatalog();
   const snapshot = await getDoc(fairDoc(fairId));
   if (!snapshot.exists()) return null;
   return toFair(snapshot.id, snapshot.data());

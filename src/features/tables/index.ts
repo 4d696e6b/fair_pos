@@ -1,3 +1,3 @@
 "use client";
 
-export { listTablesForShop, updateTable } from "./services/tables";
+export { createTable, listTablesForShop, updateTable } from "./services/tables";

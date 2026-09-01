@@ -5,29 +5,25 @@ import { COLLECTIONS } from "@/lib/collections";
 import { firestore } from "@/lib/firebase";
 import type { ShopCosts } from "@/lib/types";
 
-const DEFAULT_COSTS: Omit<ShopCosts, "shopId"> = {
-  boothRent: 15000,
-  wages: 25000,
-  ingredients: 40000,
-  misc: 5000,
+const EMPTY_COSTS: Omit<ShopCosts, "shopId"> = {
+  boothRent: 0,
+  wages: 0,
+  ingredients: 0,
+  misc: 0,
 };
 
 export async function getShopCosts(shopId: string): Promise<ShopCosts> {
   const snapshot = await getDoc(doc(firestore, COLLECTIONS.shopCosts, shopId));
   if (!snapshot.exists()) {
-    await setDoc(doc(firestore, COLLECTIONS.shopCosts, shopId), {
-      ...DEFAULT_COSTS,
-      updatedAt: serverTimestamp(),
-    });
-    return { shopId, ...DEFAULT_COSTS };
+    return { shopId, ...EMPTY_COSTS };
   }
   const data = snapshot.data();
   return {
     shopId,
-    boothRent: Number(data.boothRent ?? DEFAULT_COSTS.boothRent),
-    wages: Number(data.wages ?? DEFAULT_COSTS.wages),
-    ingredients: Number(data.ingredients ?? DEFAULT_COSTS.ingredients),
-    misc: Number(data.misc ?? DEFAULT_COSTS.misc),
+    boothRent: Number(data.boothRent ?? 0),
+    wages: Number(data.wages ?? 0),
+    ingredients: Number(data.ingredients ?? 0),
+    misc: Number(data.misc ?? 0),
   };
 }
 

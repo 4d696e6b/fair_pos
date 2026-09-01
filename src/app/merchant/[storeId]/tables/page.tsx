@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CreditCard } from "lucide-react";
-import { listTablesForShop, updateTable } from "@/features/tables";
+import { createTable, listTablesForShop, updateTable } from "@/features/tables";
 import type { ShopTable, TableStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<TableStatus, { label: string; className: string }> = {
@@ -35,9 +35,19 @@ export default function TablesPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-stone-900">โต๊ะ + การชำระเงิน</h1>
-        <p className="mt-1 text-sm text-stone-400">ดูสถานะโต๊ะและจัดการการชำระเงิน</p>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-stone-900">โต๊ะ + การชำระเงิน</h1>
+          <p className="mt-1 text-sm text-stone-400">ดูสถานะโต๊ะและจัดการการชำระเงิน</p>
+        </div>
+        <button
+          onClick={() =>
+            void createTable(storeId, `โต๊ะ ${tables.length + 1}`).then(load)
+          }
+          className="rounded-full bg-orange-700 px-4 py-2 text-sm font-semibold text-white"
+        >
+          เพิ่มโต๊ะ
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">

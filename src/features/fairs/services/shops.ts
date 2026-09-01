@@ -14,7 +14,6 @@ import {
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/collections";
 import { firestore, storage } from "@/lib/firebase";
-import { seedDemoCatalog } from "@/lib/seed-demo";
 import type { SellingStyle, Shop, ShopTag } from "@/lib/types";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -65,7 +64,6 @@ function toShop(id: string, data: Record<string, unknown>): Shop {
 }
 
 export async function listAllShops(): Promise<Shop[]> {
-  await seedDemoCatalog();
   const snapshot = await getDocs(shopsCol());
   return snapshot.docs
     .map((item) => toShop(item.id, item.data()))
@@ -73,7 +71,6 @@ export async function listAllShops(): Promise<Shop[]> {
 }
 
 export async function listShopsForFair(fairId: string): Promise<Shop[]> {
-  await seedDemoCatalog();
   const snapshot = await getDocs(query(shopsCol(), where("fairId", "==", fairId)));
   return snapshot.docs.map((item) => toShop(item.id, item.data()));
 }
@@ -86,7 +83,6 @@ export async function listShopsByOwner(ownerUserId: string): Promise<Shop[]> {
 }
 
 export async function getShop(shopId: string): Promise<Shop | null> {
-  await seedDemoCatalog();
   const snapshot = await getDoc(shopDoc(shopId));
   if (!snapshot.exists()) return null;
   return toShop(snapshot.id, snapshot.data());

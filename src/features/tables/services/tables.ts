@@ -31,27 +31,25 @@ function toTable(id: string, data: Record<string, unknown>): ShopTable {
 
 export async function listTablesForShop(shopId: string): Promise<ShopTable[]> {
   const snapshot = await getDocs(query(tablesCol(), where("shopId", "==", shopId)));
-  const tables = snapshot.docs.map((item) => toTable(item.id, item.data()));
-  if (tables.length > 0) {
-    return tables.sort((a, b) => a.label.localeCompare(b.label, "th"));
-  }
-
-  await Promise.all(
-    Array.from({ length: 8 }, (_, index) =>
-      addDoc(tablesCol(), {
-        shopId,
-        label: `โต๊ะ ${index + 1}`,
-        status: "empty",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }),
-    ),
-  );
-
-  const seeded = await getDocs(query(tablesCol(), where("shopId", "==", shopId)));
-  return seeded.docs
+  return snapshot.docs
     .map((item) => toTable(item.id, item.data()))
     .sort((a, b) => a.label.localeCompare(b.label, "th"));
+}
+
+export async function createTable(shopId: string, label: string): Promise<ShopTable> {
+  const ref = await addDoc(tablesCol(), {
+    shopId,
+    label,
+    status: "empty",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return {
+    id: ref.id,
+    shopId,
+    label,
+    status: "empty",
+  };
 }
 
 export async function updateTable(
