@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -60,4 +61,27 @@ export async function upsertFair(fair: Fair): Promise<void> {
     },
     { merge: true },
   );
+}
+
+export async function createFair(input: {
+  name: string;
+  dateRange: string;
+  location: string;
+  category: FairCategory;
+  image?: string;
+}): Promise<Fair> {
+  const ref = await addDoc(fairsCol(), {
+    name: input.name,
+    dateRange: input.dateRange,
+    location: input.location,
+    image: input.image ?? "",
+    category: input.category,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  const created = await getFair(ref.id);
+  if (!created) {
+    throw new Error("Failed to create fair.");
+  }
+  return created;
 }

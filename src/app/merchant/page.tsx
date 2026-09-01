@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, Plus, Store as StoreIcon, Tag } from "lucide-react";
 import Header from "@/components/shared/Header";
-import { createShop, listShopsByOwner } from "@/features/fairs";
+import { createFair, createShop, listShopsByOwner } from "@/features/fairs";
 import { useAuth } from "@/lib/auth-context";
 import type { Shop } from "@/lib/types";
 import CreateStoreModal from "./components/CreateStoreModal";
+import CreateFairModal from "./components/CreateFairModal";
 
 export default function MerchantStoresPage() {
   const { user, loading: authLoading, openLogin } = useAuth();
   const [stores, setStores] = useState<Shop[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [fairModalOpen, setFairModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = async (uid: string) => {
@@ -40,6 +42,7 @@ export default function MerchantStoresPage() {
             <h1 className="text-xl font-bold text-stone-900">ร้านค้าของฉัน</h1>
             <p className="mt-1 text-sm text-stone-400">เลือกสาขาเพื่อเข้าสู่ระบบจัดการ</p>
           </div>
+          <div className="flex flex-wrap gap-2">
           <button
             onClick={() => (user ? setModalOpen(true) : openLogin())}
             className="flex cursor-pointer items-center gap-1.5 rounded-full bg-orange-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800"
@@ -47,6 +50,14 @@ export default function MerchantStoresPage() {
             <Plus size={16} />
             สร้างร้านค้าใหม่
           </button>
+          <button
+            onClick={() => (user ? setFairModalOpen(true) : openLogin())}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-orange-200"
+          >
+            <Calendar size={16} />
+            สร้างงานแฟร์
+          </button>
+          </div>
         </div>
 
         {loading ? (
@@ -127,6 +138,13 @@ export default function MerchantStoresPage() {
           });
           await load(user.uid);
           return store.id;
+        }}
+      />
+      <CreateFairModal
+        open={fairModalOpen}
+        onClose={() => setFairModalOpen(false)}
+        onCreated={async (input) => {
+          await createFair(input);
         }}
       />
     </div>

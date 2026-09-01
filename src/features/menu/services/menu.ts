@@ -13,8 +13,9 @@ import {
   where,
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/collections";
-import { firestore } from "@/lib/firebase";
+import { firestore, storage } from "@/lib/firebase";
 import type { MenuCategory, MenuItem } from "@/lib/types";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 function menuCol() {
   return collection(firestore, COLLECTIONS.menuItems);
@@ -67,6 +68,7 @@ export async function createMenuItem(input: {
   category: MenuCategory;
   description?: string;
   image?: string;
+  isAvailable?: boolean;
 }): Promise<MenuItem> {
   const ref = await addDoc(menuCol(), {
     shopId: input.shopId,
@@ -75,7 +77,7 @@ export async function createMenuItem(input: {
     image: input.image ?? "",
     category: input.category,
     description: input.description ?? "",
-    isAvailable: true,
+    isAvailable: input.isAvailable ?? true,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -87,7 +89,7 @@ export async function createMenuItem(input: {
     image: input.image ?? "",
     category: input.category,
     description: input.description,
-    isAvailable: true,
+    isAvailable: input.isAvailable ?? true,
   };
 }
 
@@ -103,4 +105,11 @@ export async function updateMenuItem(
 
 export async function deleteMenuItem(itemId: string): Promise<void> {
   await deleteDoc(menuDoc(itemId));
+}
+
+export async function uploadMenuImage(shopId: string, file: File): Promise<string> {
+  const path = `stores/${shopId}/menu-${Date.now()}-${file.name}`;
+  const imageRef = ref(storage, path);
+  await uploadBytes(imageRef, file);
+  return getDownloadURL(imageRef);
 }

@@ -5,5 +5,6 @@ export {
   deleteMenuItem,
   listMenuForShop,
   updateMenuItem,
+  uploadMenuImage,
   upsertMenuItem,
 } from "./services/menu";
