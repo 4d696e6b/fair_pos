@@ -78,6 +78,8 @@ function toOrder(id: string, data: Record<string, unknown>): Order {
     total: Number(data.total ?? 0),
     status: (data.status as OrderStatus) ?? "received",
     createdAt: created.toISOString(),
+    completedAt: data.completedAt ? toDate(data.completedAt).toISOString() : undefined,
+    handledBy: data.handledBy ? String(data.handledBy) : undefined,
     estimatedMinutes: String(data.estimatedMinutes ?? "5 - 10 นาที"),
   };
 }
@@ -111,6 +113,9 @@ export async function createOrder(input: {
   tableLabel?: string;
 }): Promise<Order> {
   const userId = auth.currentUser?.uid ?? null;
+  if (!userId) {
+    throw new Error("กรุณาเข้าสู่ระบบก่อนสั่งอาหาร");
+  }
   const payload = {
     fairId: input.fairId,
     shopId: input.shopId,
@@ -129,9 +134,6 @@ export async function createOrder(input: {
     updatedAt: serverTimestamp(),
   };
   const ref = await addDoc(ordersCol(), payload);
-  if (!userId) {
-    rememberGuestOrder(ref.id);
-  }
   const created = await getOrder(ref.id);
   if (!created) {
     throw new Error("Failed to create order.");
@@ -173,11 +175,36 @@ export async function listOrdersForShopCustomer(
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
+  handledBy?: string,
 ): Promise<void> {
-  await updateDoc(orderDoc(orderId), {
+  const patch: Record<string, unknown> = {
     status,
     updatedAt: serverTimestamp(),
-  });
+  };
+  if (handledBy) {
+    patch.handledBy = handledBy;
+  }
+  if (status === "completed") {
+    patch.completedAt = serverTimestamp();
+  }
+  await updateDoc(orderDoc(orderId), patch);
+}
+
+export function isOpenKitchenStatus(status: OrderStatus) {
+  return status === "received" || status === "preparing" || status === "ready";
+}
+
+export async function completeOpenOrdersForTable(
+  shopId: string,
+  tableLabel: string,
+  handledBy?: string,
+): Promise<void> {
+  const orders = await listOrdersForShop(shopId);
+  await Promise.all(
+    orders
+      .filter((order) => order.tableLabel === tableLabel && isOpenKitchenStatus(order.status))
+      .map((order) => updateOrderStatus(order.id, "completed", handledBy)),
+  );
 }
 
 export function listenOrdersForShop(

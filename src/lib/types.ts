@@ -79,6 +79,8 @@ export type Order = {
   total: number;
   status: OrderStatus;
   createdAt: string;
+  completedAt?: string;
+  handledBy?: string;
   estimatedMinutes: string;
 };
 
