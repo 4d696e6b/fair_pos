@@ -82,9 +82,17 @@ export default function OrderStatusCard({
         </div>
       </div>
 
-      <p className="text-center font-bold text-stone-900">กำลังเตรียมอาหาร</p>
+      <p className="text-center font-bold text-stone-900">
+        {order.status === "ready"
+          ? "อาหารพร้อมแล้ว"
+          : order.status === "preparing"
+            ? "กำลังเตรียมอาหาร"
+            : "รับออเดอร์แล้ว"}
+      </p>
       <p className="mx-auto mt-1 max-w-xs text-center text-sm text-stone-400">
-        ออเดอร์ของคุณกำลังถูกปรุงอย่างพิถีพิถัน โปรดรอเรียกคิวเมื่ออาหารพร้อม
+        {order.status === "ready"
+          ? "กรุณามารับอาหารที่ร้านตามหมายเลขคิว"
+          : "ออเดอร์ของคุณกำลังถูกปรุงอย่างพิถีพิถัน โปรดรอเรียกคิวเมื่ออาหารพร้อม"}
       </p>
 
       <div className="mt-5">
