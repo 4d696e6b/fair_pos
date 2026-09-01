@@ -6,6 +6,7 @@ import { ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FairSearchSelect, { type FairOption } from "./components/FairSearchSelect";
 import { getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
+import type { SellingStyle } from "@/lib/types";
 
 const CATEGORY_OPTIONS = ["อาหารไทย", "อาหารทานเล่น", "เครื่องดื่ม", "ของหวาน", "อาหารนานาชาติ", "อาหารเพื่อสุขภาพ", "อาหารทะเล", "อาหารมังสวิรัติ"];
 
@@ -14,8 +15,6 @@ const SELLING_STYLE_OPTIONS = [
   { value: "dine-in", label: "นั่งทานที่ร้านเท่านั้น" },
   { value: "both", label: "นั่งทาน + ซื้อกลับ" },
 ];
-
-type SellingStyle = (typeof SELLING_STYLE_OPTIONS)[number]["value"];
 
 const inputClass =
   "w-full rounded-lg text-start border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
@@ -89,7 +88,7 @@ export default function StoreInfoPage() {
         name,
         description,
         category: selectedCategory ?? CATEGORY_OPTIONS[0],
-        sellingStyle,
+        sellingStyle: sellingStyle,
         image: storeImageUrl ?? "",
         taxRate: tax,
         serviceCharge,
@@ -287,7 +286,7 @@ export default function StoreInfoPage() {
                   items={SELLING_STYLE_OPTIONS}
                   getKey={(option) => option.value}
                   isSelected={(option) => option.value === sellingStyle}
-                  onSelect={(option) => setSellingStyle(option.value)}
+                  onSelect={(option) => setSellingStyle(option.value as SellingStyle)}
                   renderTrigger={({ isOpen }) => (
                     <div className="flex w-full items-center gap-1.5 rounded-xl  py-1 transition hover:bg-stone-50">
                       <span className={inputClass}>

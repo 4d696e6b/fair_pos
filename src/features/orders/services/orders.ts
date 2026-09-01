@@ -164,10 +164,10 @@ export async function listOrdersForShopCustomer(
   }
 
   const guests = await Promise.all(guestOrderIds().map((id) => getOrder(id)));
-  return guests.filter(
-    (order): order is Order =>
-      Boolean(order) && order.shopId === shopId && order.fairId === fairId,
-  );
+  return guests.filter((order): order is Order => {
+    if (!order) return false;
+    return order.shopId === shopId && order.fairId === fairId;
+  });
 }
 
 export async function updateOrderStatus(
