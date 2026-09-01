@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { CreditCard } from "lucide-react";
-
-type TableStatus = "empty" | "occupied" | "awaiting-payment";
-
-type TableInfo = {
-  id: string;
-  label: string;
-  status: TableStatus;
-  total?: number;
-  seatedMinutes?: number;
-};
+import { listTablesForShop, updateTable } from "@/features/tables";
+import type { ShopTable, TableStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<TableStatus, { label: string; className: string }> = {
   empty: { label: "ว่าง", className: "border-stone-200 bg-white text-stone-400" },
@@ -19,19 +12,26 @@ const STATUS_STYLES: Record<TableStatus, { label: string; className: string }> =
   "awaiting-payment": { label: "รอชำระเงิน", className: "border-red-200 bg-red-50 text-red-600" },
 };
 
-const MOCK_TABLES: TableInfo[] = [
-  { id: "t1", label: "โต๊ะ 1", status: "empty" },
-  { id: "t2", label: "โต๊ะ 2", status: "occupied", total: 480, seatedMinutes: 18 },
-  { id: "t3", label: "โต๊ะ 3", status: "empty" },
-  { id: "t4", label: "โต๊ะ 4", status: "occupied", total: 920, seatedMinutes: 42 },
-  { id: "t5", label: "โต๊ะ 5", status: "awaiting-payment", total: 640, seatedMinutes: 55 },
-  { id: "t6", label: "โต๊ะ 6", status: "empty" },
-  { id: "t7", label: "โต๊ะ 7", status: "occupied", total: 260, seatedMinutes: 6 },
-  { id: "t8", label: "โต๊ะ 8", status: "empty" },
-];
-
 export default function TablesPage() {
-  const [selected, setSelected] = useState<TableInfo | null>(null);
+  const { storeId } = useParams<{ storeId: string }>();
+  const [tables, setTables] = useState<ShopTable[]>([]);
+  const [selected, setSelected] = useState<ShopTable | null>(null);
+
+  const load = async () => {
+    const next = await listTablesForShop(storeId);
+    setTables(next);
+  };
+
+  useEffect(() => {
+    void load();
+  }, [storeId]);
+
+  const handlePay = async () => {
+    if (!selected) return;
+    await updateTable(selected.id, { status: "empty", total: 0, seatedMinutes: 0 });
+    setSelected(null);
+    await load();
+  };
 
   return (
     <div>
@@ -42,7 +42,7 @@ export default function TablesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {MOCK_TABLES.map((table) => {
+          {tables.map((table) => {
             const style = STATUS_STYLES[table.status];
             return (
               <button
@@ -87,7 +87,10 @@ export default function TablesPage() {
                       ฿{selected.total.toFixed(2)}
                     </span>
                   </div>
-                  <button className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800">
+                  <button
+                    onClick={() => void handlePay()}
+                    className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800"
+                  >
                     <CreditCard size={16} />
                     รับชำระเงิน
                   </button>
