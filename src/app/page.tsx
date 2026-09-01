@@ -1,47 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Search } from "lucide-react";
 import Header from "@/components/shared/Header";
 import FilterPill from "@/components/shared/FilterPill";
-import FairCard from "@/components/shared/FairCard";
-import { listFairs } from "@/features/fairs";
-import { Fair, FairCategory } from "@/lib/types";
-
-const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
-  "ทั้งหมด",
-  "ตลาดนัด",
-  "ของกิน",
-  "ของใช้",
-];
+import RestaurantCard from "@/components/shared/RestaurantCard";
+import { listAllShops } from "@/features/fairs";
+import { activeTags, uniqueActiveTagLabels } from "@/lib/shop-tags";
+import type { Shop } from "@/lib/types";
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
-  const [allFairs, setAllFairs] = useState<Fair[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(
-    "ทั้งหมด"
-  );
+  const [activeTag, setActiveTag] = useState("ทั้งหมด");
 
   useEffect(() => {
-    void listFairs()
-      .then(setAllFairs)
+    void listAllShops()
+      .then(setShops)
       .finally(() => setLoading(false));
   }, []);
 
-  const fairs = allFairs.filter((fair) => {
-    const matchesCategory = category === "ทั้งหมด" || fair.category === category;
-    const matchesQuery = fair.name.toLowerCase().includes(query.toLowerCase());
-    return matchesCategory && matchesQuery;
+  const tagLabels = useMemo(() => uniqueActiveTagLabels(shops), [shops]);
+
+  const filtered = shops.filter((shop) => {
+    const tags = activeTags(shop);
+    const haystack = [shop.name, shop.category, shop.location, ...tags.map((tag) => tag.label)]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery = !query.trim() || haystack.includes(query.trim().toLowerCase());
+    const matchesTag =
+      activeTag === "ทั้งหมด" || tags.some((tag) => tag.label === activeTag);
+    return matchesQuery && matchesTag;
   });
 
   return (
     <div>
       <Header variant="site" />
 
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="relative flex min-h-[340px] flex-col items-center justify-center gap-6 px-6 py-20 text-center">
           <Image
@@ -55,10 +53,10 @@ export default function HomePage() {
 
           <div className="relative z-10 space-y-3">
             <h1 className="text-3xl font-bold text-white sm:text-4xl">
-              ค้นหางานแฟร์อาหารใกล้คุณ
+              ค้นหาร้านอาหารใกล้คุณ
             </h1>
             <p className="text-stone-100">
-              รวมร้านอร่อย งานอีเวนต์ และประสบการณ์การกินที่ดีที่สุด
+              ค้นด้วยชื่อร้าน หมวดหมู่ หรือแท็กโปรโมชั่นที่ร้านตั้งไว้
             </p>
           </div>
 
@@ -67,7 +65,7 @@ export default function HomePage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหา 'งานแฟร์' หรือ 'ร้านอาหาร'..."
+              placeholder="ค้นหาชื่อร้าน หรือแท็ก เช่น โปร 1 แถม 1"
               className="w-full bg-transparent px-1 py-2 text-sm text-stone-700 outline-none placeholder:text-stone-400"
             />
             <button className="shrink-0 cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800">
@@ -76,65 +74,42 @@ export default function HomePage() {
           </div>
 
           <div className="relative z-10 flex flex-wrap justify-center gap-2">
-            {CATEGORIES.map((c) => (
+            {["ทั้งหมด", ...tagLabels].map((label) => (
               <FilterPill
-                key={c}
-                label={c}
-                active={category === c}
-                onClick={() => setCategory(c)}
+                key={label}
+                label={label}
+                active={activeTag === label}
+                onClick={() => setActiveTag(label)}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Upcoming fairs */}
       <section className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-stone-900">
-            งานแฟร์ที่กำลังจะมาถึง
-          </h2>
-          <Link
-            href="/fairs"
-            className="text-sm font-medium text-orange-600 hover:text-orange-700"
-          >
-            ดูทั้งหมด
-          </Link>
+        <div className="mb-5">
+          <h2 className="text-xl font-bold text-stone-900">ร้านอาหาร</h2>
+          <p className="mt-1 text-sm text-stone-400">
+            แท็กจะโชว์บนหน้าแรกเฉพาะช่วงเวลาที่ร้านตั้งไว้
+          </p>
         </div>
 
         {loading ? (
           <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
-            กำลังโหลดงานแฟร์...
+            กำลังโหลดร้านอาหาร...
           </p>
-        ) : fairs.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
-            ไม่พบงานแฟร์ที่ตรงกับการค้นหาของคุณ
+            ไม่พบร้านหรือแท็กที่ตรงกับการค้นหาของคุณ
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {fairs.map((fair) => (
-              <FairCard key={fair.id} fair={fair} />
+            {filtered.map((shop) => (
+              <RestaurantCard key={shop.id} shop={shop} />
             ))}
           </div>
         )}
       </section>
-
-      {/* Recommended shops */}
-      {/* <section className="mx-auto max-w-6xl px-6 pb-16">
-        <h2 className="mb-5 text-xl font-bold text-stone-900">
-          ร้านค้าแนะนำ
-        </h2>
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          {RECOMMENDED_SHOPS.map((shop) => (
-            <RecommendedShopCard
-              key={shop.id}
-              name={shop.name}
-              category={shop.category}
-              icon={shop.icon}
-            />
-          ))}
-        </div>
-      </section> */}
     </div>
   );
 }

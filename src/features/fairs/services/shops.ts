@@ -15,7 +15,7 @@ import {
 import { COLLECTIONS } from "@/lib/collections";
 import { firestore, storage } from "@/lib/firebase";
 import { seedDemoCatalog } from "@/lib/seed-demo";
-import type { SellingStyle, Shop } from "@/lib/types";
+import type { SellingStyle, Shop, ShopTag } from "@/lib/types";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 function shopsCol() {
@@ -24,6 +24,23 @@ function shopsCol() {
 
 function shopDoc(id: string) {
   return doc(firestore, COLLECTIONS.shops, id);
+}
+
+function toTag(value: unknown): ShopTag | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const data = value as Record<string, unknown>;
+  const label = String(data.label ?? "").trim();
+  if (!label) {
+    return null;
+  }
+  return {
+    id: String(data.id ?? crypto.randomUUID()),
+    label,
+    startAt: String(data.startAt ?? ""),
+    endAt: String(data.endAt ?? ""),
+  };
 }
 
 function toShop(id: string, data: Record<string, unknown>): Shop {
@@ -41,7 +58,18 @@ function toShop(id: string, data: Record<string, unknown>): Shop {
     taxRate: typeof data.taxRate === "number" ? data.taxRate : undefined,
     serviceCharge: typeof data.serviceCharge === "number" ? data.serviceCharge : undefined,
     sellingStyle: data.sellingStyle as SellingStyle | undefined,
+    tags: Array.isArray(data.tags)
+      ? data.tags.map(toTag).filter((tag): tag is ShopTag => Boolean(tag))
+      : [],
   };
+}
+
+export async function listAllShops(): Promise<Shop[]> {
+  await seedDemoCatalog();
+  const snapshot = await getDocs(shopsCol());
+  return snapshot.docs
+    .map((item) => toShop(item.id, item.data()))
+    .sort((a, b) => a.name.localeCompare(b.name, "th"));
 }
 
 export async function listShopsForFair(fairId: string): Promise<Shop[]> {
@@ -80,6 +108,7 @@ export async function upsertShop(shop: Shop): Promise<void> {
       taxRate: shop.taxRate ?? 0,
       serviceCharge: shop.serviceCharge ?? 0,
       sellingStyle: shop.sellingStyle ?? "both",
+      tags: shop.tags ?? [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
@@ -106,6 +135,7 @@ export async function createShop(input: {
     taxRate: 0,
     serviceCharge: 0,
     sellingStyle: "both",
+    tags: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

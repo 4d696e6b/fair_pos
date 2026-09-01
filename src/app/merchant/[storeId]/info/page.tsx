@@ -6,7 +6,7 @@ import { ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FairSearchSelect, { type FairOption } from "./components/FairSearchSelect";
 import { getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
-import type { SellingStyle } from "@/lib/types";
+import type { SellingStyle, ShopTag } from "@/lib/types";
 
 const CATEGORY_OPTIONS = ["อาหารไทย", "อาหารทานเล่น", "เครื่องดื่ม", "ของหวาน", "อาหารนานาชาติ", "อาหารเพื่อสุขภาพ", "อาหารทะเล", "อาหารมังสวิรัติ"];
 
@@ -18,6 +18,20 @@ const SELLING_STYLE_OPTIONS = [
 
 const inputClass =
   "w-full rounded-lg text-start border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
+
+function toLocalInput(iso: string) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalInput(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
 
 export default function StoreInfoPage() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -36,6 +50,10 @@ export default function StoreInfoPage() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [selectedFair, setSelectedFair] = useState<FairOption | null>(null);
   const [boothNumber, setBoothNumber] = useState("");
+  const [tags, setTags] = useState<ShopTag[]>([]);
+  const [tagLabel, setTagLabel] = useState("");
+  const [tagStart, setTagStart] = useState("");
+  const [tagEnd, setTagEnd] = useState("");
 
   useEffect(() => {
     void Promise.all([getShop(storeId), listFairs()]).then(([shop, nextFairs]) => {
@@ -56,6 +74,7 @@ export default function StoreInfoPage() {
       setServiceCharge(shop.serviceCharge ?? 0);
       setStoreImageUrl(shop.image || null);
       setBoothNumber(shop.boothNumber);
+      setTags(shop.tags ?? []);
       const fair = nextFairs.find((item) => item.id === shop.fairId);
       setSelectedFair(
         fair
@@ -94,6 +113,7 @@ export default function StoreInfoPage() {
         serviceCharge,
         fairId: selectedFair?.id ?? "",
         boothNumber,
+        tags,
       });
     } finally {
       setIsSaving(false);
@@ -380,6 +400,79 @@ export default function StoreInfoPage() {
                className={inputClass}
              />
            </label>
+
+           <div>
+             <span className="mb-1.5 block text-xs font-medium text-stone-500">
+               แท็กหน้าแรก (แสดงตามช่วงเวลา)
+             </span>
+             <p className="mb-3 text-xs text-stone-400">
+               แท็กจะโชว์บนหน้าแรกและค้นหาได้เฉพาะช่วงวันที่และเวลาที่ตั้งไว้
+             </p>
+             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+               <input
+                 value={tagLabel}
+                 onChange={(e) => setTagLabel(e.target.value)}
+                 placeholder="เช่น โปรเที่ยง"
+                 className={inputClass}
+               />
+               <input
+                 type="datetime-local"
+                 value={tagStart}
+                 onChange={(e) => setTagStart(e.target.value)}
+                 className={inputClass}
+               />
+               <input
+                 type="datetime-local"
+                 value={tagEnd}
+                 onChange={(e) => setTagEnd(e.target.value)}
+                 className={inputClass}
+               />
+               <button
+                 type="button"
+                 onClick={() => {
+                   if (!tagLabel.trim() || !tagStart || !tagEnd) return;
+                   setTags((prev) => [
+                     ...prev,
+                     {
+                       id: crypto.randomUUID(),
+                       label: tagLabel.trim(),
+                       startAt: fromLocalInput(tagStart),
+                       endAt: fromLocalInput(tagEnd),
+                     },
+                   ]);
+                   setTagLabel("");
+                   setTagStart("");
+                   setTagEnd("");
+                 }}
+                 className="rounded-lg bg-orange-700 px-4 py-2.5 text-sm font-semibold text-white"
+               >
+                 เพิ่มแท็ก
+               </button>
+             </div>
+             <ul className="space-y-2">
+               {tags.map((tag) => (
+                 <li
+                   key={tag.id}
+                   className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm"
+                 >
+                   <div>
+                     <p className="font-medium text-stone-800">{tag.label}</p>
+                     <p className="text-xs text-stone-400">
+                       {toLocalInput(tag.startAt).replace("T", " ")} –{" "}
+                       {toLocalInput(tag.endAt).replace("T", " ")}
+                     </p>
+                   </div>
+                   <button
+                     type="button"
+                     onClick={() => setTags((prev) => prev.filter((item) => item.id !== tag.id))}
+                     className="text-xs font-medium text-red-500"
+                   >
+                     ลบ
+                   </button>
+                 </li>
+               ))}
+             </ul>
+           </div>
           </div>
         </div>
       </div>

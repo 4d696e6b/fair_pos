@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Search, MapPin, X } from "lucide-react";
+import { listFairs } from "@/features/fairs";
 
 export type FairOption = {
   id: string;
@@ -10,17 +11,10 @@ export type FairOption = {
   isOpenNow: boolean;
 };
 
-// TODO: replace with a Firestore query, e.g. fairs where status == "ongoing"
-const MOCK_FAIRS: FairOption[] = [
-  { id: "fair-1", name: "งานกาชาดจตุจักร", venue: "สวนจตุจักร", isOpenNow: true },
-  { id: "fair-2", name: "ตลาดนัดกลางคืน RCA", venue: "RCA", isOpenNow: true },
-  { id: "fair-3", name: "เทศกาลอาหารทะเลระยอง", venue: "ระยอง", isOpenNow: false },
-];
-
 export default function FairSearchSelect({
   value,
   onChange,
-  fairs = MOCK_FAIRS,
+  fairs: fairsProp,
   placeholder = "ค้นหางานอีเวนต์ที่เปิดอยู่ตอนนี้",
 }: {
   value: FairOption | null;
@@ -30,8 +24,27 @@ export default function FairSearchSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [loadedFairs, setLoadedFairs] = useState<FairOption[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (fairsProp) {
+      return;
+    }
+    void listFairs().then((next) => {
+      setLoadedFairs(
+        next.map((fair) => ({
+          id: fair.id,
+          name: fair.name,
+          venue: fair.location,
+          isOpenNow: true,
+        })),
+      );
+    });
+  }, [fairsProp]);
+
+  const fairs = fairsProp ?? loadedFairs;
 
   useEffect(() => {
     if (!isOpen) return;

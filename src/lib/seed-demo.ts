@@ -50,6 +50,14 @@ export async function seedDemoCatalog(): Promise<void> {
           taxRate: 0,
           serviceCharge: 0,
           sellingStyle: "both",
+          tags: [
+            {
+              id: `${shop.id}-lunch`,
+              label: shop.category,
+              startAt: new Date(Date.now() - 86400000).toISOString(),
+              endAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+            },
+          ],
           createdAt: now,
           updatedAt: now,
         }),
