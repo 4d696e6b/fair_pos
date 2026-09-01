@@ -60,6 +60,21 @@ export default function AccountPage() {
   const displayName = user.displayName?.trim() || email.split("@")[0] || "ผู้ใช้";
   const fullName = `${info.firstName} ${info.lastName}`.trim() || displayName;
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateUserProfile(user.uid, {
+        firstName: info.firstName,
+        lastName: info.lastName,
+        phone: info.phone,
+        notifyEmail: prefs.email,
+        notifySalesSummary: prefs.salesSummary,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div>
       <Header variant="site" />
