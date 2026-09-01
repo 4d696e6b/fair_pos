@@ -6,6 +6,7 @@ import Header from "@/components/shared/Header";
 import ProfileSidebar from "./components/ProfileSidebar";
 import PersonalInfoCard, { PersonalInfo } from "./components/PersonalInfoCard";
 import NotificationsCard, { NotificationPrefs } from "./components/NotificationsCard";
+import SecurityCard from "./components/SecurityCard";
 import { getUserProfile, updateUserProfile } from "@/features/auth";
 import { useAuth } from "@/lib/auth-context";
 
@@ -23,6 +24,7 @@ export default function AccountPage() {
   });
 
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,6 +46,7 @@ export default function AccountPage() {
         email: profile.notifyEmail !== false,
         salesSummary: Boolean(profile.notifySalesSummary),
       });
+      setAvatarUrl(profile.photoURL || user.photoURL || undefined);
     });
   }, [user]);
 
@@ -84,14 +87,16 @@ export default function AccountPage() {
           <ProfileSidebar
             name={fullName}
             email={email}
-            avatarUrl={user.photoURL ?? undefined}
+            avatarUrl={avatarUrl ?? user.photoURL ?? undefined}
             merchantMode={merchantMode}
             onSwitchToMerchant={toggleMerchantMode}
+            onAvatarChange={setAvatarUrl}
           />
 
           <div className="space-y-6">
             <PersonalInfoCard info={info} onChange={setInfo} />
             <NotificationsCard prefs={prefs} onChange={setPrefs} />
+            <SecurityCard onDeleted={() => router.replace("/")} />
 
             <div className="flex justify-end gap-3">
               <button

@@ -25,6 +25,7 @@ export {
   deleteUserProfile,
   getUserProfile,
   updateUserProfile,
+  uploadUserAvatar,
 } from "./services/users";
 export { useAuth } from "./hooks/use-auth";
 export type {
