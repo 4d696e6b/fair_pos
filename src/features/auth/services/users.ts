@@ -37,6 +37,11 @@ function toUser(id: string, data: Record<string, unknown>): User {
     username: String(data.username ?? ""),
     email: String(data.email ?? ""),
     isVerified: Boolean(data.isVerified),
+    firstName: data.firstName ? String(data.firstName) : "",
+    lastName: data.lastName ? String(data.lastName) : "",
+    phone: data.phone ? String(data.phone) : "",
+    notifyEmail: data.notifyEmail !== false,
+    notifySalesSummary: Boolean(data.notifySalesSummary),
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -74,7 +79,19 @@ export async function getUserProfile(userId: string): Promise<User | null> {
 
 export async function updateUserProfile(
   userId: string,
-  patch: Partial<Pick<User, "username" | "email" | "isVerified">>,
+  patch: Partial<
+    Pick<
+      User,
+      | "username"
+      | "email"
+      | "isVerified"
+      | "firstName"
+      | "lastName"
+      | "phone"
+      | "notifyEmail"
+      | "notifySalesSummary"
+    >
+  >,
 ): Promise<void> {
   await updateDoc(usersDoc(userId), {
     ...patch,
