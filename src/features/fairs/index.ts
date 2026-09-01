@@ -1,8 +1,9 @@
 "use client";
 
-export { getFair, listFairs, upsertFair } from "./services/fairs";
+export { createFair, getFair, listFairs, upsertFair } from "./services/fairs";
 export {
   createShop,
+  deleteShop,
   getShop,
   listAllShops,
   listShopsByOwner,

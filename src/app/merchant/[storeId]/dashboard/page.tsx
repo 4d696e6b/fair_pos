@@ -43,6 +43,18 @@ export default function DashboardPage() {
   const completed = orders.filter(
     (order) => order.status === "completed" || order.status === "ready",
   );
+  const timed = completed.filter((order) => order.completedAt);
+  const avgMinutes = timed.length
+    ? Math.round(
+        timed.reduce((sum, order) => {
+          return (
+            sum +
+            (new Date(order.completedAt as string).getTime() - new Date(order.createdAt).getTime()) /
+              60000
+          );
+        }, 0) / timed.length,
+      )
+    : null;
   const totalSales = completed.reduce((sum, order) => sum + order.total, 0);
   const netIncome = totalSales - dailyExpense * 30;
 
@@ -89,8 +101,8 @@ export default function DashboardPage() {
     },
     {
       label: "เวลาเฉลี่ย/ออเดอร์ (Avg Time)",
-      value: "—",
-      delta: "คำนวณเมื่อมี timestamp ครบ",
+      value: avgMinutes != null ? `${avgMinutes} นาที` : "—",
+      delta: timed.length ? `จาก ${timed.length} ออเดอร์ที่ปิดบิล` : "จะคำนวณเมื่อมีออเดอร์ที่ปิดบิล",
       icon: Clock,
     },
     {

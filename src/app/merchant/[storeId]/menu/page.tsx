@@ -8,6 +8,7 @@ import {
   deleteMenuItem,
   listMenuForShop,
   updateMenuItem,
+  uploadMenuImage,
 } from "@/features/menu";
 import type { MenuCategory, MenuItem } from "@/lib/types";
 
@@ -27,6 +28,9 @@ export default function MenuInfoPage() {
   const [price, setPrice] = useState("0");
   const [category, setCategory] = useState<MenuCategory>("เมนูหลัก");
   const [pending, setPending] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const load = async () => {
     const next = await listMenuForShop(storeId);
@@ -48,6 +52,9 @@ export default function MenuInfoPage() {
     setDescription("");
     setPrice("0");
     setCategory("เมนูหลัก");
+    setIsAvailable(true);
+    setImageUrl("");
+    setImageFile(null);
   };
 
   const openEdit = (item: MenuItem) => {
@@ -56,12 +63,16 @@ export default function MenuInfoPage() {
     setDescription(item.description ?? "");
     setPrice(String(item.price));
     setCategory(item.category);
+    setIsAvailable(item.isAvailable !== false);
+    setImageUrl(item.image);
+    setImageFile(null);
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setPending(true);
     try {
+      const uploaded = imageFile ? await uploadMenuImage(storeId, imageFile) : imageUrl;
       if (editing === "new") {
         await createMenuItem({
           shopId: storeId,
@@ -69,6 +80,8 @@ export default function MenuInfoPage() {
           description: description.trim(),
           price: Number(price) || 0,
           category,
+          image: uploaded,
+          isAvailable,
         });
       } else if (editing) {
         await updateMenuItem(editing.id, {
@@ -76,6 +89,8 @@ export default function MenuInfoPage() {
           description: description.trim(),
           price: Number(price) || 0,
           category,
+          image: uploaded,
+          isAvailable,
         });
       }
       setEditing(null);
@@ -137,7 +152,21 @@ export default function MenuInfoPage() {
               <p className="mt-0.5 text-xs text-stone-400">{item.description}</p>
               <div className="mt-3 flex items-center justify-between">
                 <span className="font-bold text-orange-700">฿{item.price.toFixed(2)}</span>
-                <div className="flex gap-2 text-stone-400">
+                <div className="flex items-center gap-2 text-stone-400">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void updateMenuItem(item.id, { isAvailable: item.isAvailable === false }).then(load)
+                    }
+                    className={
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                      (item.isAvailable === false
+                        ? "bg-stone-100 text-stone-500"
+                        : "bg-emerald-50 text-emerald-600")
+                    }
+                  >
+                    {item.isAvailable === false ? "หมด" : "มีขาย"}
+                  </button>
                   <button
                     aria-label="แก้ไข"
                     onClick={() => openEdit(item)}
@@ -209,6 +238,25 @@ export default function MenuInfoPage() {
                   </option>
                 ))}
               </select>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                className="text-xs text-stone-500"
+              />
+              {(imageFile || imageUrl) && (
+                <p className="text-xs text-stone-400">
+                  {imageFile ? imageFile.name : "ใช้รูปเดิมของเมนูนี้"}
+                </p>
+              )}
+              <label className="flex items-center gap-2 text-sm text-stone-600">
+                <input
+                  type="checkbox"
+                  checked={isAvailable}
+                  onChange={(e) => setIsAvailable(e.target.checked)}
+                />
+                มีขายอยู่ตอนนี้
+              </label>
               <button
                 type="submit"
                 disabled={pending}

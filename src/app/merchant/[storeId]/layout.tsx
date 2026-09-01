@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import {
   ClipboardList,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getShop } from "@/features/fairs";
 import Header from "@/components/shared/Header";
+import { useAuth } from "@/lib/auth-context";
 
 type NavItem = { href: string; label: string; icon: typeof ClipboardList };
 type NavGroup = { title: string; items: NavItem[] };
@@ -49,16 +50,37 @@ function getNavGroups(storeId: string): NavGroup[] {
 
 export default function MerchantStoreLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const params = useParams<{ storeId: string }>();
   const storeId = params.storeId;
+  const { user, loading } = useAuth();
   const [storeName, setStoreName] = useState("ร้านค้า");
+  const [allowed, setAllowed] = useState(false);
   const navGroups = getNavGroups(storeId);
 
   useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/merchant");
+      return;
+    }
     void getShop(storeId).then((shop) => {
-      if (shop) setStoreName(shop.name);
+      if (!shop || shop.ownerUserId !== user.uid) {
+        router.replace("/merchant");
+        return;
+      }
+      setStoreName(shop.name);
+      setAllowed(true);
     });
-  }, [storeId]);
+  }, [storeId, user, loading, router]);
+
+  if (!allowed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-50 text-sm text-stone-500">
+        กำลังตรวจสอบสิทธิ์ร้านค้า...
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-stone-50">
@@ -66,6 +88,7 @@ export default function MerchantStoreLayout({ children }: { children: ReactNode 
         variant="flow"
         backHref="/merchant"
         crumbs={[{ label: storeName, active: true }]}
+        showSettings
       />
 
       <div className="flex sticky flex-1">

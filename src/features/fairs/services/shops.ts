@@ -3,6 +3,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -158,4 +159,8 @@ export async function uploadShopImage(shopId: string, file: File): Promise<strin
   const imageRef = ref(storage, path);
   await uploadBytes(imageRef, file);
   return getDownloadURL(imageRef);
+}
+
+export async function deleteShop(shopId: string): Promise<void> {
+  await deleteDoc(shopDoc(shopId));
 }

@@ -13,6 +13,8 @@ import { usePathname } from "next/navigation";
 
 type AuthModal = "login" | "register" | "forgot-password" | null;
 
+const MERCHANT_MODE_KEY = "fair-pos-merchant-mode";
+
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
@@ -36,6 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    setMerchantMode(window.localStorage.getItem(MERCHANT_MODE_KEY) === "1");
+  }, []);
+
+  useEffect(() => {
     setAuthModal(null);
   }, [pathname]);
 
@@ -45,6 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       if (nextUser) {
         setAuthModal(null);
+      } else {
+        setMerchantMode(false);
+        window.localStorage.removeItem(MERCHANT_MODE_KEY);
       }
     });
     return unsubscribe;
@@ -52,7 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = () => {
     setMerchantMode(false);
+    window.localStorage.removeItem(MERCHANT_MODE_KEY);
     return firebaseSignOut(auth);
+  };
+
+  const toggleMerchantMode = () => {
+    setMerchantMode((prev) => {
+      const next = !prev;
+      window.localStorage.setItem(MERCHANT_MODE_KEY, next ? "1" : "0");
+      return next;
+    });
   };
 
   return (
@@ -67,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         closeAuthModal: () => setAuthModal(null),
         signOut,
         merchantMode,
-        toggleMerchantMode: () => setMerchantMode((prev) => !prev),
+        toggleMerchantMode,
       }}
     >
       {children}

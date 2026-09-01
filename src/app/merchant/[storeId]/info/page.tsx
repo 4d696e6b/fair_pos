@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FairSearchSelect, { type FairOption } from "./components/FairSearchSelect";
-import { getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
+import { deleteShop, getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
 import type { SellingStyle, ShopTag } from "@/lib/types";
 
 const CATEGORY_OPTIONS = ["อาหารไทย", "อาหารทานเล่น", "เครื่องดื่ม", "ของหวาน", "อาหารนานาชาติ", "อาหารเพื่อสุขภาพ", "อาหารทะเล", "อาหารมังสวิรัติ"];
@@ -35,6 +35,7 @@ function fromLocalInput(value: string) {
 
 export default function StoreInfoPage() {
   const { storeId } = useParams<{ storeId: string }>();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [tax, setTax] = useState(0);
   const [serviceCharge, setServiceCharge] = useState(0);
@@ -45,6 +46,7 @@ export default function StoreInfoPage() {
   const [storeImageUrl, setStoreImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
@@ -117,6 +119,17 @@ export default function StoreInfoPage() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("ลบร้านค้านี้? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+    setIsDeleting(true);
+    try {
+      await deleteShop(storeId);
+      router.replace("/merchant");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -474,6 +487,19 @@ export default function StoreInfoPage() {
              </ul>
            </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+          <p className="font-semibold text-red-600">ลบร้านค้า</p>
+          <p className="mt-1 text-sm text-stone-400">ร้านจะหายจากรายการร้านค้าของฉันทันที</p>
+          <button
+            type="button"
+            onClick={() => void handleDelete()}
+            disabled={isDeleting}
+            className="mt-4 cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+          >
+            {isDeleting ? "กำลังลบ..." : "ลบร้านค้านี้"}
+          </button>
         </div>
       </div>
     </div>

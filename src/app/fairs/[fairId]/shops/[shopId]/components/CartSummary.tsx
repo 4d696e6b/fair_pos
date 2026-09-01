@@ -4,12 +4,14 @@ export default function CartSummary({
   total,
   disabled,
   onCheckout,
+  label,
 }: {
   subtotal: number;
   tax: number;
   total: number;
   disabled: boolean;
   onCheckout: () => void;
+  label?: string;
 }) {
   return (
     <>
@@ -33,7 +35,7 @@ export default function CartSummary({
         disabled={disabled}
         className="mt-4 w-full rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800 cursor-pointer disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
       >
-        เพิ่มออเดอร์
+        {label ?? "เพิ่มออเดอร์"}
       </button>
     </>
   );

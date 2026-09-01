@@ -9,8 +9,9 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-import { firestore } from "@/lib/firebase";
+import { firestore, storage } from "@/lib/firebase";
 import type { User } from "@/types/user";
 
 const USERS_COLLECTION = "users";
@@ -42,6 +43,7 @@ function toUser(id: string, data: Record<string, unknown>): User {
     phone: data.phone ? String(data.phone) : "",
     notifyEmail: data.notifyEmail !== false,
     notifySalesSummary: Boolean(data.notifySalesSummary),
+    photoURL: data.photoURL ? String(data.photoURL) : undefined,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -90,6 +92,7 @@ export async function updateUserProfile(
       | "phone"
       | "notifyEmail"
       | "notifySalesSummary"
+      | "photoURL"
     >
   >,
 ): Promise<void> {
@@ -97,6 +100,13 @@ export async function updateUserProfile(
     ...patch,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function uploadUserAvatar(userId: string, file: File): Promise<string> {
+  const path = `users/${userId}/avatar-${Date.now()}-${file.name}`;
+  const imageRef = ref(storage, path);
+  await uploadBytes(imageRef, file);
+  return getDownloadURL(imageRef);
 }
 
 export async function deleteUserProfile(userId: string): Promise<void> {

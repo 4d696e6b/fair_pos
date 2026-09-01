@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronLeft, Settings, User } from "lucide-react";
+import { ChevronLeft, Settings, User } from "lucide-react";
 import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
+import NotificationsMenu from "./NotificationsMenu";
 
 type Crumb = {
   label: string;
@@ -32,17 +33,23 @@ const MERCHANT_NAV = { href: "/merchant", label: "ร้านค้า" };
 
 function HeaderActions({ showSettings }: { showSettings?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, openLogin } = useAuth();
   const isAccountActive = pathname === "/account";
+  const storeMatch = pathname.match(/^\/merchant\/([^/]+)/);
 
   return (
     <div className="flex items-center gap-4 text-stone-600">
-      <button aria-label="การแจ้งเตือน" className="transition hover:text-stone-900">
-        <Bell size={20} />
-      </button>
+      <NotificationsMenu />
 
       {showSettings ? (
-        <button aria-label="ตั้งค่า" className="transition hover:text-stone-900">
+        <button
+          aria-label="ตั้งค่า"
+          onClick={() =>
+            router.push(storeMatch ? `/merchant/${storeMatch[1]}/info` : "/account")
+          }
+          className="transition hover:text-stone-900"
+        >
           <Settings size={20} />
         </button>
       ) : user ? (

@@ -8,6 +8,7 @@ export interface User {
   phone?: string;
   notifyEmail?: boolean;
   notifySalesSummary?: boolean;
+  photoURL?: string;
   createdAt: Date;
   updatedAt: Date;
 }
