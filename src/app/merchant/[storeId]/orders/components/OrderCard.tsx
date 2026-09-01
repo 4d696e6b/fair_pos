@@ -1,9 +1,8 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, ChefHat, CookingPot, X } from "lucide-react";
 import { useEffect, useState } from "react";
-
-export type OrderStatus = "pending" | "completed" | "cancelled";
+import type { OrderStatus } from "@/lib/types";
 
 export type KitchenOrder = {
   id: string;
@@ -20,12 +19,22 @@ function getElapsedMinutes(createdAt: string) {
   return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000));
 }
 
+const STATUS_BADGE: Partial<Record<OrderStatus, { label: string; className: string }>> = {
+  received: { label: "รับออเดอร์", className: "bg-orange-100 text-orange-700" },
+  preparing: { label: "กำลังปรุง", className: "bg-amber-50 text-amber-700" },
+  ready: { label: "พร้อมรับ", className: "bg-sky-50 text-sky-700" },
+  completed: { label: "เสร็จแล้ว", className: "bg-emerald-50 text-emerald-600" },
+  cancelled: { label: "ยกเลิกแล้ว", className: "bg-red-50 text-red-500" },
+};
+
 export default function OrderCard({
   order,
+  onAdvance,
   onRequestComplete,
   onRequestCancel,
 }: {
   order: KitchenOrder;
+  onAdvance: (id: string, next: OrderStatus) => void;
   onRequestComplete: (id: string, queue: string) => void;
   onRequestCancel: (id: string, queue: string) => void;
 }) {
@@ -39,7 +48,10 @@ export default function OrderCard({
     return () => clearInterval(interval);
   }, [order.createdAt]);
 
-  const showAsNew = elapsedMinutes < 3;
+  const showAsNew = elapsedMinutes < 3 && order.status === "received";
+  const badge = STATUS_BADGE[order.status];
+  const isActive =
+    order.status === "received" || order.status === "preparing" || order.status === "ready";
 
   return (
     <div
@@ -59,17 +71,12 @@ export default function OrderCard({
           <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
             ใหม่
           </span>
-        ) : order.status === "pending" ? (
-          <span className="text-xs font-semibold text-red-500">{elapsedMinutes} น.</span>
-        ) : order.status === "cancelled" ? (
-          <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-500">
-            ยกเลิกแล้ว
+        ) : badge ? (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badge.className}`}>
+            {badge.label}
+            {isActive ? ` • ${elapsedMinutes} น.` : ""}
           </span>
-        ) : (
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
-            เสร็จแล้ว
-          </span>
-        )}
+        ) : null}
       </div>
 
       <ul className="flex-1 space-y-2 border-t border-stone-100 pt-3 text-sm">
@@ -85,22 +92,47 @@ export default function OrderCard({
         ))}
       </ul>
 
-      {order.status === "pending" ? (
+      {isActive ? (
         <div className="mt-4 flex gap-2">
           <button
             onClick={() => onRequestCancel(order.id, order.queue)}
             className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-red-600 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
           >
             <X size={15} />
-            ยกเลิกออเดอร์
+            ยกเลิก
           </button>
-          <button
-            onClick={() => onRequestComplete(order.id, order.queue)}
-            className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-emerald-600 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            <Check size={15} />
-            ทำเสร็จแล้ว
-          </button>
+          {order.status === "received" ? (
+            <button
+              onClick={() => onAdvance(order.id, "preparing")}
+              className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-orange-700 py-2 text-sm font-semibold text-white transition hover:bg-orange-800"
+            >
+              <CookingPot size={15} />
+              เริ่มปรุง
+            </button>
+          ) : null}
+          {order.status === "preparing" ? (
+            <button
+              onClick={() => onAdvance(order.id, "ready")}
+              className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-sky-600 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+            >
+              <ChefHat size={15} />
+              พร้อมรับ
+            </button>
+          ) : null}
+          {order.status === "ready" && order.type === "takeaway" ? (
+            <button
+              onClick={() => onRequestComplete(order.id, order.queue)}
+              className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full bg-emerald-600 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              <Check size={15} />
+              ส่งแล้ว
+            </button>
+          ) : null}
+          {order.status === "ready" && order.type === "dine-in" ? (
+            <p className="flex w-full items-center justify-center rounded-full bg-stone-100 py-2 text-xs font-medium text-stone-500">
+              รอชำระเงินที่โต๊ะ
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

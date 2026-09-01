@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { CreditCard } from "lucide-react";
+import { completeOpenOrdersForTable, isOpenKitchenStatus, listenOrdersForShop } from "@/features/orders";
 import { createTable, listTablesForShop, updateTable } from "@/features/tables";
-import type { ShopTable, TableStatus } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
+import type { Order, ShopTable, TableStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<TableStatus, { label: string; className: string }> = {
   empty: { label: "ว่าง", className: "border-stone-200 bg-white text-stone-400" },
@@ -12,25 +14,64 @@ const STATUS_STYLES: Record<TableStatus, { label: string; className: string }> =
   "awaiting-payment": { label: "รอชำระเงิน", className: "border-red-200 bg-red-50 text-red-600" },
 };
 
+type TableView = ShopTable & { orders: Order[] };
+
+function deriveTable(table: ShopTable, orders: Order[]): TableView {
+  const open = orders.filter(
+    (order) => order.tableLabel === table.label && isOpenKitchenStatus(order.status),
+  );
+  const total = open.reduce((sum, order) => sum + order.total, 0);
+  const oldest = [...open].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+  const seatedMinutes = oldest
+    ? Math.max(0, Math.floor((Date.now() - new Date(oldest.createdAt).getTime()) / 60000))
+    : 0;
+  const status: TableStatus =
+    open.length === 0
+      ? "empty"
+      : open.every((order) => order.status === "ready")
+        ? "awaiting-payment"
+        : "occupied";
+
+  return { ...table, status, total, seatedMinutes, orders: open };
+}
+
 export default function TablesPage() {
   const { storeId } = useParams<{ storeId: string }>();
+  const { user } = useAuth();
   const [tables, setTables] = useState<ShopTable[]>([]);
-  const [selected, setSelected] = useState<ShopTable | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
-  const load = async () => {
-    const next = await listTablesForShop(storeId);
-    setTables(next);
+  const loadTables = async () => {
+    setTables(await listTablesForShop(storeId));
   };
 
   useEffect(() => {
-    void load();
+    void loadTables();
   }, [storeId]);
 
+  useEffect(() => {
+    return listenOrdersForShop(storeId, setOrders);
+  }, [storeId]);
+
+  const views = useMemo(
+    () => tables.map((table) => deriveTable(table, orders)),
+    [tables, orders],
+  );
+  const selected = views.find((table) => table.id === selectedId) ?? null;
+
   const handlePay = async () => {
-    if (!selected) return;
-    await updateTable(selected.id, { status: "empty", total: 0, seatedMinutes: 0 });
-    setSelected(null);
-    await load();
+    if (!selected || selected.orders.length === 0) return;
+    setPaying(true);
+    try {
+      const handledBy = user?.displayName?.trim() || user?.email?.split("@")[0] || "ร้านค้า";
+      await completeOpenOrdersForTable(storeId, selected.label, handledBy);
+      await updateTable(selected.id, { status: "empty", total: 0, seatedMinutes: 0 });
+      await loadTables();
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
@@ -38,11 +79,11 @@ export default function TablesPage() {
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-stone-900">โต๊ะ + การชำระเงิน</h1>
-          <p className="mt-1 text-sm text-stone-400">ดูสถานะโต๊ะและจัดการการชำระเงิน</p>
+          <p className="mt-1 text-sm text-stone-400">ยอดโต๊ะคำนวณจากออเดอร์ทานที่ร้านที่ยังไม่ปิดบิล</p>
         </div>
         <button
           onClick={() =>
-            void createTable(storeId, `โต๊ะ ${tables.length + 1}`).then(load)
+            void createTable(storeId, `โต๊ะ ${tables.length + 1}`).then(loadTables)
           }
           className="rounded-full bg-orange-700 px-4 py-2 text-sm font-semibold text-white"
         >
@@ -52,16 +93,16 @@ export default function TablesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {tables.map((table) => {
+          {views.map((table) => {
             const style = STATUS_STYLES[table.status];
             return (
               <button
                 key={table.id}
-                onClick={() => setSelected(table)}
+                onClick={() => setSelectedId(table.id)}
                 className={
                   "flex cursor-pointer flex-col items-center justify-center rounded-2xl border p-5 text-center shadow-sm transition hover:shadow-md " +
                   style.className +
-                  (selected?.id === table.id ? " ring-2 ring-orange-400" : "")
+                  (selectedId === table.id ? " ring-2 ring-orange-400" : "")
                 }
               >
                 <p className="font-bold text-stone-900">{table.label}</p>
@@ -89,20 +130,31 @@ export default function TablesPage() {
 
               <div className="my-4 h-px bg-stone-100" />
 
-              {selected.total ? (
+              {selected.orders.length > 0 ? (
                 <>
+                  <ul className="mb-4 space-y-2 text-sm">
+                    {selected.orders.map((order) => (
+                      <li key={order.id} className="flex justify-between text-stone-600">
+                        <span>
+                          {order.queueNumber} · {order.refCode}
+                        </span>
+                        <span className="font-semibold text-stone-900">฿{order.total.toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
                   <div className="flex justify-between text-sm text-stone-600">
                     <span>ยอดรวม</span>
                     <span className="font-semibold text-stone-900">
-                      ฿{selected.total.toFixed(2)}
+                      ฿{(selected.total ?? 0).toFixed(2)}
                     </span>
                   </div>
                   <button
                     onClick={() => void handlePay()}
-                    className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800"
+                    disabled={paying}
+                    className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 py-3 text-sm font-semibold text-white transition hover:bg-orange-800 disabled:opacity-60"
                   >
                     <CreditCard size={16} />
-                    รับชำระเงิน
+                    {paying ? "กำลังรับชำระ..." : "รับชำระเงิน (เงินสด)"}
                   </button>
                 </>
               ) : (

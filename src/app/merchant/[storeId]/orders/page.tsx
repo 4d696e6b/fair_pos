@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import OrderCard, { KitchenOrder, OrderStatus } from "./components/OrderCard";
+import OrderCard, { KitchenOrder } from "./components/OrderCard";
 import OrderConfirmModal, { OrderConfirmAction } from "./components/OrderConfirmModal";
 import { listenOrdersForShop, updateOrderStatus } from "@/features/orders";
-import type { Order } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
+import type { Order, OrderStatus } from "@/lib/types";
 
 function toKitchen(order: Order): KitchenOrder {
-  const kitchenStatus: OrderStatus =
-    order.status === "cancelled"
-      ? "cancelled"
-      : order.status === "completed" || order.status === "ready"
-        ? "completed"
-        : "pending";
-
   return {
     id: order.id,
     refCode: order.refCode,
@@ -22,19 +16,24 @@ function toKitchen(order: Order): KitchenOrder {
     queue: order.queueNumber,
     type: order.type,
     createdAt: order.createdAt,
-    status: kitchenStatus,
+    status: order.status,
     items: order.lines.map((line) => ({
       qty: line.qty,
       name: line.item.name,
       note: line.note,
-      done: kitchenStatus === "completed",
+      done: order.status === "completed",
     })),
   };
 }
 
+function handlerName(displayName: string | null | undefined, email: string | null | undefined) {
+  return displayName?.trim() || email?.split("@")[0] || "ร้านค้า";
+}
+
 export default function OrdersPage() {
   const { storeId } = useParams<{ storeId: string }>();
-  const [tab, setTab] = useState<OrderStatus>("pending");
+  const { user } = useAuth();
+  const [tab, setTab] = useState<"active" | "done">("active");
   const [allOrders, setAllOrders] = useState<KitchenOrder[]>([]);
   const [pendingAction, setPendingAction] = useState<OrderConfirmAction>(null);
 
@@ -44,16 +43,18 @@ export default function OrdersPage() {
     });
   }, [storeId]);
 
-  const orders = allOrders.filter((o) =>
-    tab === "pending" ? o.status === "pending" : o.status !== "pending",
-  );
-  const pendingCount = allOrders.filter((o) => o.status === "pending").length;
-  const doneCount = allOrders.filter((o) => o.status !== "pending").length;
+  const isActive = (status: OrderStatus) =>
+    status === "received" || status === "preparing" || status === "ready";
+
+  const orders = allOrders.filter((o) => (tab === "active" ? isActive(o.status) : !isActive(o.status)));
+  const pendingCount = allOrders.filter((o) => isActive(o.status)).length;
+  const doneCount = allOrders.length - pendingCount;
+  const handledBy = handlerName(user?.displayName, user?.email);
 
   const handleConfirm = async () => {
     if (!pendingAction) return;
     const { orderId, type } = pendingAction;
-    await updateOrderStatus(orderId, type === "complete" ? "completed" : "cancelled");
+    await updateOrderStatus(orderId, type === "complete" ? "completed" : "cancelled", handledBy);
     setPendingAction(null);
   };
 
@@ -66,19 +67,19 @@ export default function OrdersPage() {
         </div>
         <div className="flex gap-2 rounded-full border border-stone-200 bg-white p-1">
           <button
-            onClick={() => setTab("pending")}
+            onClick={() => setTab("active")}
             className={
               "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition " +
-              (tab === "pending" ? "bg-orange-700 text-white" : "text-stone-500 hover:text-stone-800")
+              (tab === "active" ? "bg-orange-700 text-white" : "text-stone-500 hover:text-stone-800")
             }
           >
             กำลังทำ ({pendingCount})
           </button>
           <button
-            onClick={() => setTab("completed")}
+            onClick={() => setTab("done")}
             className={
               "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition " +
-              (tab === "completed" ? "bg-orange-700 text-white" : "text-stone-500 hover:text-stone-800")
+              (tab === "done" ? "bg-orange-700 text-white" : "text-stone-500 hover:text-stone-800")
             }
           >
             เสร็จสิ้น ({doneCount})
@@ -94,6 +95,7 @@ export default function OrdersPage() {
             <OrderCard
               key={order.id}
               order={order}
+              onAdvance={(id, next) => void updateOrderStatus(id, next, handledBy)}
               onRequestComplete={(id, queue) => setPendingAction({ orderId: id, queue, type: "complete" })}
               onRequestCancel={(id, queue) => setPendingAction({ orderId: id, queue, type: "cancel" })}
             />
