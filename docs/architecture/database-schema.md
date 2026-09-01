@@ -41,6 +41,7 @@ App profile. Document id is the Firebase Auth UID.
 | description, location | string (optional) |
 | taxRate, serviceCharge | number (optional) |
 | sellingStyle | `takeaway` \| `dine-in` \| `both` (optional) |
+| tags | array of `{ id, label, startAt, endAt }` — homepage shows a tag only while `now` is between start and end |
 | createdAt / updatedAt | timestamp |
 
 ### `menuItems/{itemId}`

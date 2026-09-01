@@ -13,13 +13,12 @@ Open http://localhost:3000
 
 ## Structure
 
-- `app/page.tsx` — homepage (search, category filter, upcoming fairs, recommended shops)
+- `app/page.tsx` — homepage (search restaurants and timed tags)
 - `app/fairs/[fairId]/page.tsx` — fair detail (banner, search/filter, participating shops)
 - `app/fairs/[fairId]/shops/[shopId]/layout.tsx` — shared header/tabs + cart context for a shop
 - `app/fairs/[fairId]/shops/[shopId]/page.tsx` — menu + cart sidebar, checkout
 - `app/fairs/[fairId]/shops/[shopId]/orders/page.tsx` — order status + e-ticket
-- `lib/mock-data.ts` — mock fairs/shops/menu items (swap for a real API later)
-- `lib/order-context.tsx` — cart + order state, scoped per shop
-- `components/` — SiteHeader, FlowHeader, FairCard, ShopTile, RecommendedShopCard, FilterPill
+- `lib/order-context.tsx` — cart state, scoped per shop
+- `features/` — Firestore reads and writes for fairs, shops, menus, orders
 
 Try it: `/` → click "ดูร้านค้า" on ตลาดนัดเชียงราก → click a shop → add items → "ชำระเงิน" to see the order-tracking screen.

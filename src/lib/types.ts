@@ -12,6 +12,13 @@ export type Fair = {
 
 export type SellingStyle = "takeaway" | "dine-in" | "both";
 
+export type ShopTag = {
+  id: string;
+  label: string;
+  startAt: string;
+  endAt: string;
+};
+
 export type Shop = {
   id: string;
   fairId: string;
@@ -26,6 +33,7 @@ export type Shop = {
   taxRate?: number;
   serviceCharge?: number;
   sellingStyle?: SellingStyle;
+  tags?: ShopTag[];
 };
 
 export type MenuCategory = "เมนูหลัก" | "ของทานเล่น" | "เครื่องดื่ม" | "ของหวาน";

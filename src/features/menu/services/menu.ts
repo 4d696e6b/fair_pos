@@ -14,7 +14,6 @@ import {
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/collections";
 import { firestore } from "@/lib/firebase";
-import { seedDemoCatalog } from "@/lib/seed-demo";
 import type { MenuCategory, MenuItem } from "@/lib/types";
 
 function menuCol() {
@@ -39,7 +38,6 @@ function toMenuItem(id: string, data: Record<string, unknown>): MenuItem {
 }
 
 export async function listMenuForShop(shopId: string): Promise<MenuItem[]> {
-  await seedDemoCatalog();
   const snapshot = await getDocs(query(menuCol(), where("shopId", "==", shopId)));
   return snapshot.docs.map((item) => toMenuItem(item.id, item.data()));
 }
