@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { MapPin, ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FairSearchSelect, { type FairOption } from "./components/FairSearchSelect";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-// import { storage } from "@/lib/firebase";
+import { getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
+import type { SellingStyle, ShopTag } from "@/lib/types";
 
 const CATEGORY_OPTIONS = ["อาหารไทย", "อาหารทานเล่น", "เครื่องดื่ม", "ของหวาน", "อาหารนานาชาติ", "อาหารเพื่อสุขภาพ", "อาหารทะเล", "อาหารมังสวิรัติ"];
 
@@ -15,21 +16,31 @@ const SELLING_STYLE_OPTIONS = [
   { value: "both", label: "นั่งทาน + ซื้อกลับ" },
 ];
 
-type SellingStyle = (typeof SELLING_STYLE_OPTIONS)[number]["value"];
-
 const inputClass =
   "w-full rounded-lg text-start border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
 
-// TODO: replace with the real store id (e.g. from auth context / route params)
-const STORE_ID = "current-store-id";
+function toLocalInput(iso: string) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalInput(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
 
 export default function StoreInfoPage() {
-  const [name, setName] = useState("อมยิ้ม ตามสั่ง");
+  const { storeId } = useParams<{ storeId: string }>();
+  const [name, setName] = useState("");
   const [tax, setTax] = useState(0);
   const [serviceCharge, setServiceCharge] = useState(0);
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORY_OPTIONS[0]);
   const [sellingStyle, setSellingStyle] = useState<SellingStyle>("both");
+  const [fairs, setFairs] = useState<FairOption[]>([]);
 
   const [storeImageUrl, setStoreImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -39,29 +50,71 @@ export default function StoreInfoPage() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [selectedFair, setSelectedFair] = useState<FairOption | null>(null);
   const [boothNumber, setBoothNumber] = useState("");
+  const [tags, setTags] = useState<ShopTag[]>([]);
+  const [tagLabel, setTagLabel] = useState("");
+  const [tagStart, setTagStart] = useState("");
+  const [tagEnd, setTagEnd] = useState("");
+
+  useEffect(() => {
+    void Promise.all([getShop(storeId), listFairs()]).then(([shop, nextFairs]) => {
+      setFairs(
+        nextFairs.map((fair) => ({
+          id: fair.id,
+          name: fair.name,
+          venue: fair.location,
+          isOpenNow: true,
+        })),
+      );
+      if (!shop) return;
+      setName(shop.name);
+      setDescription(shop.description ?? "");
+      setSelectedCategory(shop.category);
+      setSellingStyle(shop.sellingStyle ?? "both");
+      setTax(shop.taxRate ?? 0);
+      setServiceCharge(shop.serviceCharge ?? 0);
+      setStoreImageUrl(shop.image || null);
+      setBoothNumber(shop.boothNumber);
+      setTags(shop.tags ?? []);
+      const fair = nextFairs.find((item) => item.id === shop.fairId);
+      setSelectedFair(
+        fair
+          ? { id: fair.id, name: fair.name, venue: fair.location, isOpenNow: true }
+          : null,
+      );
+    });
+  }, [storeId]);
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
-    // try {
-    //   const path = `stores/${STORE_ID}/cover-${Date.now()}-${file.name}`;
-    //   const imageRef = ref(storage, path);
-    //   await uploadBytes(imageRef, file);
-    //   const url = await getDownloadURL(imageRef);
-    //   setStoreImageUrl(url);
-    // } catch (err) {
-    //   console.error("Failed to upload store image:", err);
-    // } finally {
-    //   setIsUploadingImage(false);
-    //   e.target.value = ""; // allow re-selecting the same file
-    // }
+    try {
+      const url = await uploadShopImage(storeId, file);
+      setStoreImageUrl(url);
+    } catch (err) {
+      console.error("Failed to upload store image:", err);
+    } finally {
+      setIsUploadingImage(false);
+      e.target.value = "";
+    }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: write name, description, category, sellingStyle, storeImageUrl to Firestore
+      await updateShop(storeId, {
+        name,
+        description,
+        category: selectedCategory ?? CATEGORY_OPTIONS[0],
+        sellingStyle: sellingStyle,
+        image: storeImageUrl ?? "",
+        taxRate: tax,
+        serviceCharge,
+        fairId: selectedFair?.id ?? "",
+        boothNumber,
+        tags,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -253,7 +306,7 @@ export default function StoreInfoPage() {
                   items={SELLING_STYLE_OPTIONS}
                   getKey={(option) => option.value}
                   isSelected={(option) => option.value === sellingStyle}
-                  onSelect={(option) => setSellingStyle(option.value)}
+                  onSelect={(option) => setSellingStyle(option.value as SellingStyle)}
                   renderTrigger={({ isOpen }) => (
                     <div className="flex w-full items-center gap-1.5 rounded-xl  py-1 transition hover:bg-stone-50">
                       <span className={inputClass}>
@@ -333,7 +386,7 @@ export default function StoreInfoPage() {
              <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-stone-500">
                งานอีเวนต์ (Fair)
              </span>
-             <FairSearchSelect value={selectedFair} onChange={setSelectedFair} />
+             <FairSearchSelect value={selectedFair} onChange={setSelectedFair} fairs={fairs} />
            </div>
            
            <label className="block">
@@ -347,6 +400,79 @@ export default function StoreInfoPage() {
                className={inputClass}
              />
            </label>
+
+           <div>
+             <span className="mb-1.5 block text-xs font-medium text-stone-500">
+               แท็กหน้าแรก (แสดงตามช่วงเวลา)
+             </span>
+             <p className="mb-3 text-xs text-stone-400">
+               แท็กจะโชว์บนหน้าแรกและค้นหาได้เฉพาะช่วงวันที่และเวลาที่ตั้งไว้
+             </p>
+             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+               <input
+                 value={tagLabel}
+                 onChange={(e) => setTagLabel(e.target.value)}
+                 placeholder="เช่น โปรเที่ยง"
+                 className={inputClass}
+               />
+               <input
+                 type="datetime-local"
+                 value={tagStart}
+                 onChange={(e) => setTagStart(e.target.value)}
+                 className={inputClass}
+               />
+               <input
+                 type="datetime-local"
+                 value={tagEnd}
+                 onChange={(e) => setTagEnd(e.target.value)}
+                 className={inputClass}
+               />
+               <button
+                 type="button"
+                 onClick={() => {
+                   if (!tagLabel.trim() || !tagStart || !tagEnd) return;
+                   setTags((prev) => [
+                     ...prev,
+                     {
+                       id: crypto.randomUUID(),
+                       label: tagLabel.trim(),
+                       startAt: fromLocalInput(tagStart),
+                       endAt: fromLocalInput(tagEnd),
+                     },
+                   ]);
+                   setTagLabel("");
+                   setTagStart("");
+                   setTagEnd("");
+                 }}
+                 className="rounded-lg bg-orange-700 px-4 py-2.5 text-sm font-semibold text-white"
+               >
+                 เพิ่มแท็ก
+               </button>
+             </div>
+             <ul className="space-y-2">
+               {tags.map((tag) => (
+                 <li
+                   key={tag.id}
+                   className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm"
+                 >
+                   <div>
+                     <p className="font-medium text-stone-800">{tag.label}</p>
+                     <p className="text-xs text-stone-400">
+                       {toLocalInput(tag.startAt).replace("T", " ")} –{" "}
+                       {toLocalInput(tag.endAt).replace("T", " ")}
+                     </p>
+                   </div>
+                   <button
+                     type="button"
+                     onClick={() => setTags((prev) => prev.filter((item) => item.id !== tag.id))}
+                     className="text-xs font-medium text-red-500"
+                   >
+                     ลบ
+                   </button>
+                 </li>
+               ))}
+             </ul>
+           </div>
           </div>
         </div>
       </div>

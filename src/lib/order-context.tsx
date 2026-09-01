@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { CartLine, MenuItem, Order } from "./types";
+import { CartLine, MenuItem } from "./types";
 
 const TAX_RATE = 0.07;
 
@@ -20,29 +20,12 @@ type OrderContextValue = {
   subtotal: number;
   tax: number;
   total: number;
-  orders: Order[];
-  placeOrder: (fairId: string, shopId: string, boothNumber: string) => Order;
 };
 
 const OrderContext = createContext<OrderContextValue | null>(null);
 
-function randomQueueNumber() {
-  const n = Math.floor(Math.random() * 900) + 100;
-  return `A${n}`;
-}
-
-function randomRefCode() {
-  const digits = Math.floor(Math.random() * 90000) + 10000;
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const suffix =
-    letters[Math.floor(Math.random() * letters.length)] +
-    letters[Math.floor(Math.random() * letters.length)];
-  return `REF-${digits}-${suffix}`;
-}
-
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
 
   const addItem = (item: MenuItem) => {
     setCart((prev) => {
@@ -82,29 +65,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const tax = useMemo(() => Math.round(subtotal * TAX_RATE * 100) / 100, [subtotal]);
   const total = useMemo(() => subtotal + tax, [subtotal, tax]);
 
-  const placeOrder = (fairId: string, shopId: string, boothNumber: string) => {
-    const newOrder: Order = {
-      id: crypto.randomUUID(),
-      queueNumber: randomQueueNumber(),
-      refCode: randomRefCode(),
-      fairId,
-      shopId,
-      lines: cart,
-      subtotal,
-      tax,
-      total,
-      status: "preparing",
-      createdAt: new Date().toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      estimatedMinutes: "5 - 10 นาที",
-    };
-    setOrders((prev) => [...prev, newOrder]);
-    clearCart();
-    return newOrder;
-  };
-
   return (
     <OrderContext.Provider
       value={{
@@ -116,8 +76,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         subtotal,
         tax,
         total,
-        orders,
-        placeOrder,
       }}
     >
       {children}

@@ -1,25 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Download, Filter, Search } from "lucide-react";
+import { listOrdersForShop } from "@/features/orders";
+import type { Order } from "@/lib/types";
 
 type HistoryStatus = "completed" | "preparing" | "cancelled";
 
-type HistoryOrder = {
-  id: string;
-  date: string;
-  time: string;
-  total: number;
-  status: HistoryStatus;
-  employee: string;
-};
-
-const MOCK_HISTORY: HistoryOrder[] = [
-  { id: "#ORD-1042", date: "12 พ.ย. 2026", time: "14:32 น.", total: 840, status: "completed", employee: "-" },
-  { id: "#ORD-1041", date: "12 พ.ย. 2026", time: "14:15 น.", total: 1250, status: "preparing", employee: "-" },
-  { id: "#ORD-1040", date: "12 พ.ย. 2026", time: "13:45 น.", total: 450, status: "cancelled", employee: "แอดมิน" },
-  { id: "#ORD-1039", date: "12 พ.ย. 2026", time: "13:10 น.", total: 920, status: "completed", employee: "-" },
-];
+function toHistoryStatus(status: Order["status"]): HistoryStatus {
+  if (status === "cancelled") return "cancelled";
+  if (status === "completed" || status === "ready") return "completed";
+  return "preparing";
+}
 
 const STATUS_STYLES: Record<HistoryStatus, { label: string; className: string }> = {
   completed: { label: "เสร็จสิ้น", className: "bg-emerald-50 text-emerald-600" },
@@ -35,17 +28,42 @@ const TABS: { key: "all" | HistoryStatus; label: string }[] = [
 ];
 
 export default function OrderHistoryPage() {
+  const { storeId } = useParams<{ storeId: string }>();
   const [tab, setTab] = useState<"all" | HistoryStatus>("all");
   const [search, setSearch] = useState("");
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
 
-  const orders = MOCK_HISTORY.filter(
+  useEffect(() => {
+    void listOrdersForShop(storeId).then(setAllOrders);
+  }, [storeId]);
+
+  const mapped = allOrders.map((order) => {
+    const created = new Date(order.createdAt);
+    return {
+      id: order.refCode,
+      date: created.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }),
+      time: created.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+      total: order.total,
+      status: toHistoryStatus(order.status),
+      employee: "-",
+      createdAt: created,
+    };
+  });
+
+  const orders = mapped.filter(
     (o) => (tab === "all" || o.status === tab) && o.id.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const todayCount = MOCK_HISTORY.length;
-  const totalSales = MOCK_HISTORY.reduce((sum, o) => sum + o.total, 0);
-  const cancelledCount = MOCK_HISTORY.filter((o) => o.status === "cancelled").length;
-  const avgPerBill = Math.round(totalSales / MOCK_HISTORY.length);
+  const today = new Date();
+  const todayOrders = mapped.filter(
+    (o) => o.createdAt.toDateString() === today.toDateString(),
+  );
+  const todayCount = todayOrders.length;
+  const totalSales = todayOrders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + o.total, 0);
+  const cancelledCount = todayOrders.filter((o) => o.status === "cancelled").length;
+  const avgPerBill = todayCount ? Math.round(totalSales / todayCount) : 0;
 
   return (
     <div>

@@ -1,29 +1,18 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { Clock, CreditCard, ReceiptText, TrendingUp } from "lucide-react";
+import { getShopCosts } from "@/features/finance";
+import { listOrdersForShop } from "@/features/orders";
+import type { Order } from "@/lib/types";
 
-const STATS = [
-  { label: "ยอดขายรวม (Total Sales)", value: "฿45,230", delta: "+12% จากสัปดาห์ก่อน", icon: CreditCard },
-  { label: "จำนวนออเดอร์ (Orders)", value: "142", delta: "+5% จากสัปดาห์ก่อน", icon: ReceiptText },
-  { label: "เวลาเฉลี่ย/ออเดอร์ (Avg Time)", value: "12m 45s", delta: "+1m จากสัปดาห์ก่อน", icon: Clock },
-  { label: "รายรับ/รายจ่าย (Net Income)", value: "฿32,100", delta: "สุขภาพเงินแข็งแรง", icon: TrendingUp },
-];
-
-const DAYS = ["จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์", "อาทิตย์"];
-const INCOME = [15, 17, 19, 24, 32, 33, 28];
-const EXPENSE = [10, 11, 12, 13, 14, 15, 13];
-
-const TOP_ITEMS = [
-  { name: "ผัดไทยกุ้งสด", total: "฿3,780", orders: 42 },
-  { name: "ชาไทยเย็น", total: "฿1,900", orders: 38 },
-  { name: "ต้มยำกุ้ง", total: "฿4,500", orders: 25 },
-  { name: "ข้าวเหนียวมะม่วง", total: "฿2,400", orders: 20 },
-];
+const DAYS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
 
 function buildLinePath(values: number[], width: number, height: number, padding: number) {
-  const max = Math.max(...INCOME, ...EXPENSE);
+  const max = Math.max(...values, 1);
   const min = 0;
-  const stepX = (width - padding * 2) / (values.length - 1);
+  const stepX = (width - padding * 2) / Math.max(values.length - 1, 1);
 
   return values
     .map((v, i) => {
@@ -35,19 +24,92 @@ function buildLinePath(values: number[], width: number, height: number, padding:
 }
 
 export default function DashboardPage() {
+  const { storeId } = useParams<{ storeId: string }>();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [dailyExpense, setDailyExpense] = useState(0);
   const width = 640;
   const height = 220;
   const padding = 20;
+
+  useEffect(() => {
+    void Promise.all([listOrdersForShop(storeId), getShopCosts(storeId)]).then(
+      ([nextOrders, costs]) => {
+        setOrders(nextOrders);
+        setDailyExpense((costs.boothRent + costs.wages + costs.ingredients + costs.misc) / 30);
+      },
+    );
+  }, [storeId]);
+
+  const completed = orders.filter(
+    (order) => order.status === "completed" || order.status === "ready",
+  );
+  const totalSales = completed.reduce((sum, order) => sum + order.total, 0);
+  const netIncome = totalSales - dailyExpense * 30;
+
+  const incomeByDay = useMemo(() => {
+    const buckets = [0, 0, 0, 0, 0, 0, 0];
+    completed.forEach((order) => {
+      const day = new Date(order.createdAt).getDay();
+      buckets[day] += order.total;
+    });
+    return buckets;
+  }, [completed]);
+
+  const expenseByDay = incomeByDay.map(() => Math.round(dailyExpense));
+
+  const topItems = useMemo(() => {
+    const counts = new Map<string, { name: string; total: number; orders: number }>();
+    completed.forEach((order) => {
+      order.lines.forEach((line) => {
+        const current = counts.get(line.item.name) ?? {
+          name: line.item.name,
+          total: 0,
+          orders: 0,
+        };
+        current.total += line.item.price * line.qty;
+        current.orders += line.qty;
+        counts.set(line.item.name, current);
+      });
+    });
+    return [...counts.values()].sort((a, b) => b.total - a.total).slice(0, 4);
+  }, [completed]);
+
+  const stats = [
+    {
+      label: "ยอดขายรวม (Total Sales)",
+      value: `฿${totalSales.toLocaleString()}`,
+      delta: `${completed.length} ออเดอร์ที่เสร็จ`,
+      icon: CreditCard,
+    },
+    {
+      label: "จำนวนออเดอร์ (Orders)",
+      value: String(orders.length),
+      delta: "ทั้งหมดในร้านนี้",
+      icon: ReceiptText,
+    },
+    {
+      label: "เวลาเฉลี่ย/ออเดอร์ (Avg Time)",
+      value: "—",
+      delta: "คำนวณเมื่อมี timestamp ครบ",
+      icon: Clock,
+    },
+    {
+      label: "รายรับ/รายจ่าย (Net Income)",
+      value: `฿${Math.round(netIncome).toLocaleString()}`,
+      delta: netIncome >= 0 ? "กำไร" : "ขาดทุน",
+      icon: TrendingUp,
+    },
+  ];
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-stone-900">แดชบอร์ด</h1>
-        <p className="mt-1 text-sm text-stone-400">ภาพรวมยอดขายและผลการดำเนินงานของร้าน</p>
+        <p className="mt-1 text-sm text-stone-400">ภาพรวมยอดขายจากออเดอร์จริงใน Firestore</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {STATS.map(({ label, value, delta, icon: Icon }) => (
+        {stats.map(({ label, value, delta, icon: Icon }) => (
           <div key={label} className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2 text-stone-400">
               <Icon size={16} />
@@ -77,13 +139,13 @@ export default function DashboardPage() {
 
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
             <path
-              d={buildLinePath(INCOME, width, height, padding)}
+              d={buildLinePath(incomeByDay, width, height, padding)}
               fill="none"
               stroke="#c2410c"
               strokeWidth={2.5}
             />
             <path
-              d={buildLinePath(EXPENSE, width, height, padding)}
+              d={buildLinePath(expenseByDay, width, height, padding)}
               fill="none"
               stroke="#a8a29e"
               strokeWidth={2}
@@ -101,23 +163,26 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <p className="font-bold text-stone-900">เมนูยอดฮิต (Top Items)</p>
-            <button className="cursor-pointer text-xs font-medium text-orange-600 hover:text-orange-700">
-              ดูทั้งหมด
-            </button>
           </div>
 
-          <ul className="space-y-3">
-            {TOP_ITEMS.map((item) => (
-              <li key={item.name} className="flex items-center gap-3">
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-stone-100" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-stone-800">{item.name}</p>
-                  <p className="text-xs text-stone-400">{item.orders} ออเดอร์</p>
-                </div>
-                <span className="text-sm font-semibold text-orange-700">{item.total}</span>
-              </li>
-            ))}
-          </ul>
+          {topItems.length === 0 ? (
+            <p className="text-sm text-stone-400">ยังไม่มีออเดอร์ที่เสร็จสิ้น</p>
+          ) : (
+            <ul className="space-y-3">
+              {topItems.map((item) => (
+                <li key={item.name} className="flex items-center gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-stone-100" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-stone-800">{item.name}</p>
+                    <p className="text-xs text-stone-400">{item.orders} ชิ้น</p>
+                  </div>
+                  <span className="text-sm font-semibold text-orange-700">
+                    ฿{item.total.toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

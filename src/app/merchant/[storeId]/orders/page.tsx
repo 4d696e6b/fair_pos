@@ -1,62 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import OrderCard, { KitchenOrder, OrderStatus } from "./components/OrderCard";
 import OrderConfirmModal, { OrderConfirmAction } from "./components/OrderConfirmModal";
+import { listenOrdersForShop, updateOrderStatus } from "@/features/orders";
+import type { Order } from "@/lib/types";
 
-const INITIAL_ORDERS: KitchenOrder[] = [
-  {
-    id: "#REF-53432-WY",
-    queue: "A844",
-    table: "โต๊ะ 12",
-    type: "dine-in",
-    createdAt: new Date(Date.now() - 24 * 60_000).toISOString(),
-    status: "pending",
-    items: [
-      { qty: 2, name: "หมูกะเพรา", note: "ไม่เผ็ด" },
-      { qty: 1, name: "ต้มยำกุ้ง", note: "น้ำใส" },
-      { qty: 3, name: "ข้าวสวย" },
-    ],
-  },
-  {
-    id: "#REF-51072-WY",
-    table: "สั่งกลับบ้าน A",
-    queue: "A824",
-    type: "takeaway",
-    createdAt: new Date(Date.now() - 12 * 60_000).toISOString(),
-    status: "pending",
-    items: [
-      { qty: 1, name: "ผัดไทยกุ้งสด" },
-      { qty: 2, name: "แกงเขียวหวานไก่", note: "หน่อไม้เพิ่ม" },
-    ],
-  },
-  {
-    id: "#REF-35489-WY",
-    table: "โต๊ะ 4",
-    queue: "A823",
-    type: "dine-in",
-    createdAt: new Date(Date.now() - 1 * 60_000).toISOString(),
-    status: "pending",
-    items: [
-      { qty: 4, name: "ข้าวเหนียวมะม่วง" },
-      { qty: 1, name: "ชาไทยเย็น" },
-    ],
-  },
-  {
-    id: "#REF-34587-WY",
-    table: "โต๊ะ 7",
-    queue: "A834",
-    type: "dine-in",
-    createdAt: new Date(Date.now() - 40 * 60_000).toISOString(),
-    status: "completed",
-    items: [{ qty: 2, name: "ข้าวผัดกุ้ง", done: true }],
-  },
-];
+function toKitchen(order: Order): KitchenOrder {
+  const kitchenStatus: OrderStatus =
+    order.status === "cancelled"
+      ? "cancelled"
+      : order.status === "completed" || order.status === "ready"
+        ? "completed"
+        : "pending";
+
+  return {
+    id: order.id,
+    refCode: order.refCode,
+    table: order.tableLabel ?? (order.type === "takeaway" ? "สั่งกลับบ้าน" : "หน้าร้าน"),
+    queue: order.queueNumber,
+    type: order.type,
+    createdAt: order.createdAt,
+    status: kitchenStatus,
+    items: order.lines.map((line) => ({
+      qty: line.qty,
+      name: line.item.name,
+      note: line.note,
+      done: kitchenStatus === "completed",
+    })),
+  };
+}
 
 export default function OrdersPage() {
+  const { storeId } = useParams<{ storeId: string }>();
   const [tab, setTab] = useState<OrderStatus>("pending");
-  const [allOrders, setAllOrders] = useState<KitchenOrder[]>(INITIAL_ORDERS);
+  const [allOrders, setAllOrders] = useState<KitchenOrder[]>([]);
   const [pendingAction, setPendingAction] = useState<OrderConfirmAction>(null);
+
+  useEffect(() => {
+    return listenOrdersForShop(storeId, (orders) => {
+      setAllOrders(orders.map(toKitchen));
+    });
+  }, [storeId]);
 
   const orders = allOrders.filter((o) =>
     tab === "pending" ? o.status === "pending" : o.status !== "pending",
@@ -64,25 +50,10 @@ export default function OrdersPage() {
   const pendingCount = allOrders.filter((o) => o.status === "pending").length;
   const doneCount = allOrders.filter((o) => o.status !== "pending").length;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!pendingAction) return;
     const { orderId, type } = pendingAction;
-
-    setAllOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              isNew: false,
-              status: type === "complete" ? "completed" : "cancelled",
-              items:
-                type === "complete"
-                  ? o.items.map((item) => ({ ...item, done: true }))
-                  : o.items,
-            }
-          : o,
-      ),
-    );
+    await updateOrderStatus(orderId, type === "complete" ? "completed" : "cancelled");
     setPendingAction(null);
   };
 
@@ -133,7 +104,7 @@ export default function OrdersPage() {
       <OrderConfirmModal
         action={pendingAction}
         onClose={() => setPendingAction(null)}
-        onConfirm={handleConfirm}
+        onConfirm={() => void handleConfirm()}
       />
     </div>
   );

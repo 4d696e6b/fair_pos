@@ -6,6 +6,7 @@ import Header from "@/components/shared/Header";
 import ProfileSidebar from "./components/ProfileSidebar";
 import PersonalInfoCard, { PersonalInfo } from "./components/PersonalInfoCard";
 import NotificationsCard, { NotificationPrefs } from "./components/NotificationsCard";
+import { getUserProfile, updateUserProfile } from "@/features/auth";
 import { useAuth } from "@/lib/auth-context";
 
 export default function AccountPage() {
@@ -21,12 +22,30 @@ export default function AccountPage() {
     salesSummary: false,
   });
 
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       openLogin();
       router.replace("/");
     }
   }, [loading, user, openLogin, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    void getUserProfile(user.uid).then((profile) => {
+      if (!profile) return;
+      setInfo({
+        firstName: profile.firstName ?? "",
+        lastName: profile.lastName ?? "",
+        phone: profile.phone ?? "",
+      });
+      setPrefs({
+        email: profile.notifyEmail !== false,
+        salesSummary: Boolean(profile.notifySalesSummary),
+      });
+    });
+  }, [user]);
 
   if (loading || !user) {
     return (
@@ -40,6 +59,21 @@ export default function AccountPage() {
   const email = user.email ?? "";
   const displayName = user.displayName?.trim() || email.split("@")[0] || "ผู้ใช้";
   const fullName = `${info.firstName} ${info.lastName}`.trim() || displayName;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateUserProfile(user.uid, {
+        firstName: info.firstName,
+        lastName: info.lastName,
+        phone: info.phone,
+        notifyEmail: prefs.email,
+        notifySalesSummary: prefs.salesSummary,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div>
@@ -60,11 +94,31 @@ export default function AccountPage() {
             <NotificationsCard prefs={prefs} onChange={setPrefs} />
 
             <div className="flex justify-end gap-3">
-              <button className="cursor-pointer rounded-full px-5 py-2.5 text-sm font-medium text-stone-500 transition hover:text-stone-800">
+              <button
+                onClick={() =>
+                  void getUserProfile(user.uid).then((profile) => {
+                    if (!profile) return;
+                    setInfo({
+                      firstName: profile.firstName ?? "",
+                      lastName: profile.lastName ?? "",
+                      phone: profile.phone ?? "",
+                    });
+                    setPrefs({
+                      email: profile.notifyEmail !== false,
+                      salesSummary: Boolean(profile.notifySalesSummary),
+                    });
+                  })
+                }
+                className="cursor-pointer rounded-full px-5 py-2.5 text-sm font-medium text-stone-500 transition hover:text-stone-800"
+              >
                 ยกเลิก
               </button>
-              <button className="cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800">
-                บันทึกการเปลี่ยนแปลง
+              <button
+                onClick={() => void handleSave()}
+                disabled={saving}
+                className="cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800 disabled:opacity-60"
+              >
+                {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
               </button>
             </div>
           </div>

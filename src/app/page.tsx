@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import Header from "@/components/shared/Header";
 import FilterPill from "@/components/shared/FilterPill";
 import FairCard from "@/components/shared/FairCard";
-import RecommendedShopCard from "./components/RecommendedShopCard";
-import { FAIRS, RECOMMENDED_SHOPS } from "@/lib/mock-data";
-import { FairCategory } from "@/lib/types";
+import HorizontalCardRow, {
+  CarouselCard,
+} from "@/components/shared/HorizontalCardRow";
+import RestaurantCard from "@/components/shared/RestaurantCard";
+import { listAllShops, listFairs } from "@/features/fairs";
+import { activeTags, uniqueActiveTagLabels } from "@/lib/shop-tags";
+import type { Fair, FairCategory, Shop } from "@/lib/types";
 
-const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
+const FAIR_CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
   "ทั้งหมด",
   "ตลาดนัด",
   "ของกิน",
@@ -20,21 +24,48 @@ const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(
-    "ทั้งหมด"
+  const [allFairs, setAllFairs] = useState<Fair[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fairCategory, setFairCategory] = useState<(typeof FAIR_CATEGORIES)[number]>(
+    "ทั้งหมด",
   );
+  const [activeTag, setActiveTag] = useState("ทั้งหมด");
 
-  const fairs = FAIRS.filter((fair) => {
-    const matchesCategory = category === "ทั้งหมด" || fair.category === category;
-    const matchesQuery = fair.name.toLowerCase().includes(query.toLowerCase());
+  useEffect(() => {
+    void Promise.all([listFairs(), listAllShops()])
+      .then(([nextFairs, nextShops]) => {
+        setAllFairs(nextFairs);
+        setShops(nextShops);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const tagLabels = useMemo(() => uniqueActiveTagLabels(shops), [shops]);
+
+  const fairs = allFairs.filter((fair) => {
+    const matchesCategory =
+      fairCategory === "ทั้งหมด" || fair.category === fairCategory;
+    const matchesQuery =
+      !query.trim() || fair.name.toLowerCase().includes(query.trim().toLowerCase());
     return matchesCategory && matchesQuery;
+  });
+
+  const filteredShops = shops.filter((shop) => {
+    const tags = activeTags(shop);
+    const haystack = [shop.name, shop.category, shop.location, ...tags.map((tag) => tag.label)]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery = !query.trim() || haystack.includes(query.trim().toLowerCase());
+    const matchesTag = activeTag === "ทั้งหมด" || tags.some((tag) => tag.label === activeTag);
+    return matchesQuery && matchesTag;
   });
 
   return (
     <div>
       <Header variant="site" />
 
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="relative flex min-h-[340px] flex-col items-center justify-center gap-6 px-6 py-20 text-center">
           <Image
@@ -51,7 +82,7 @@ export default function HomePage() {
               ค้นหางานแฟร์อาหารใกล้คุณ
             </h1>
             <p className="text-stone-100">
-              รวมร้านอร่อย งานอีเวนต์ และประสบการณ์การกินที่ดีที่สุด
+              รวมงานแฟร์ ร้านอร่อย และแท็กโปรโมชั่นที่ร้านตั้งไว้
             </p>
           </div>
 
@@ -69,24 +100,21 @@ export default function HomePage() {
           </div>
 
           <div className="relative z-10 flex flex-wrap justify-center gap-2">
-            {CATEGORIES.map((c) => (
+            {FAIR_CATEGORIES.map((category) => (
               <FilterPill
-                key={c}
-                label={c}
-                active={category === c}
-                onClick={() => setCategory(c)}
+                key={category}
+                label={category}
+                active={fairCategory === category}
+                onClick={() => setFairCategory(category)}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Upcoming fairs */}
       <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-stone-900">
-            งานแฟร์ที่กำลังจะมาถึง
-          </h2>
+          <h2 className="text-xl font-bold text-stone-900">งานแฟร์ที่กำลังจะมาถึง</h2>
           <Link
             href="/fairs"
             className="text-sm font-medium text-orange-600 hover:text-orange-700"
@@ -95,35 +123,71 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {fairs.length === 0 ? (
+        {loading ? (
+          <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
+            กำลังโหลดงานแฟร์...
+          </p>
+        ) : fairs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
             ไม่พบงานแฟร์ที่ตรงกับการค้นหาของคุณ
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <HorizontalCardRow>
             {fairs.map((fair) => (
-              <FairCard key={fair.id} fair={fair} />
+              <CarouselCard key={fair.id}>
+                <FairCard fair={fair} />
+              </CarouselCard>
             ))}
-          </div>
+          </HorizontalCardRow>
         )}
       </section>
 
-      {/* Recommended shops */}
-      {/* <section className="mx-auto max-w-6xl px-6 pb-16">
-        <h2 className="mb-5 text-xl font-bold text-stone-900">
-          ร้านค้าแนะนำ
-        </h2>
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          {RECOMMENDED_SHOPS.map((shop) => (
-            <RecommendedShopCard
-              key={shop.id}
-              name={shop.name}
-              category={shop.category}
-              icon={shop.icon}
-            />
-          ))}
+      <section className="mx-auto max-w-6xl px-6 pb-10">
+        <div className="mb-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-stone-900">ร้านอาหาร</h2>
+            <Link
+              href="/shops"
+              className="text-sm font-medium text-orange-600 hover:text-orange-700"
+            >
+              ดูทั้งหมด
+            </Link>
+          </div>
+          <p className="mt-1 text-sm text-stone-400">
+            แท็กจะโชว์บนหน้าแรกเฉพาะช่วงเวลาที่ร้านตั้งไว้
+          </p>
+          {tagLabels.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {["ทั้งหมด", ...tagLabels].map((label) => (
+                <FilterPill
+                  key={label}
+                  label={label}
+                  active={activeTag === label}
+                  onClick={() => setActiveTag(label)}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-      </section> */}
+
+        {loading ? (
+          <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
+            กำลังโหลดร้านอาหาร...
+          </p>
+        ) : filteredShops.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
+            ไม่พบร้านหรือแท็กที่ตรงกับการค้นหาของคุณ
+          </p>
+        ) : (
+          <HorizontalCardRow>
+            {filteredShops.map((shop) => (
+              <CarouselCard key={shop.id}>
+                <RestaurantCard shop={shop} />
+              </CarouselCard>
+            ))}
+          </HorizontalCardRow>
+        )}
+      </section>
     </div>
   );
 }

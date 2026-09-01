@@ -16,7 +16,7 @@ export default function ShopTile({
     >
       <div className="relative h-28 cursor-pointer w-full overflow-hidden">
         <Image
-          src={shop.image}
+          src={shop.image || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800&auto=format&fit=crop"}
           alt={shop.name}
           fill
           className="object-cover transition duration-300 group-hover:scale-105"

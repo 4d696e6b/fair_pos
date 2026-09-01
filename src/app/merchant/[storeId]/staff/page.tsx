@@ -1,33 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-
-type StaffStatus = "active" | "inactive";
-
-type StaffMember = {
-  id: string;
-  name: string;
-  employeeId: string;
-  role: string;
-  status: StaffStatus;
-};
-
-const MOCK_STAFF: StaffMember[] = [
-  { id: "1", name: "พนักงาน1", employeeId: "EMP-042", role: "Chef", status: "active" },
-  { id: "2", name: "พนักงาน2", employeeId: "EMP-015", role: "Chef", status: "active" },
-  { id: "3", name: "พนักงาน3", employeeId: "EMP-088", role: "Cashier", status: "inactive" },
-  { id: "4", name: "พนักงาน4", employeeId: "EMP-063", role: "Financial", status: "active" },
-];
+import {
+  createStaffMember,
+  deleteStaffMember,
+  listStaffForShop,
+  updateStaffMember,
+} from "@/features/staff";
+import type { StaffMember } from "@/lib/types";
 
 export default function StaffPage() {
+  const { storeId } = useParams<{ storeId: string }>();
   const [search, setSearch] = useState("");
+  const [members, setMembers] = useState<StaffMember[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("Cashier");
 
-  const staff = MOCK_STAFF.filter(
+  const load = async () => {
+    setMembers(await listStaffForShop(storeId));
+  };
+
+  useEffect(() => {
+    void load();
+  }, [storeId]);
+
+  const staff = members.filter(
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.employeeId.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const handleAdd = async (event: FormEvent) => {
+    event.preventDefault();
+    await createStaffMember({
+      shopId: storeId,
+      name: name.trim(),
+      employeeId: `EMP-${Math.floor(Math.random() * 900) + 100}`,
+      role,
+    });
+    setName("");
+    setAdding(false);
+    await load();
+  };
 
   return (
     <div>
@@ -49,12 +66,36 @@ export default function StaffPage() {
               className="w-56 rounded-full border border-stone-200 bg-white py-2 pl-9 pr-4 text-sm outline-none transition focus:border-orange-400"
             />
           </div>
-          <button className="flex cursor-pointer items-center gap-1.5 rounded-full bg-orange-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800">
+          <button
+            onClick={() => setAdding((open) => !open)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-orange-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800"
+          >
             <Plus size={16} />
             เพิ่มพนักงาน
           </button>
         </div>
       </div>
+
+      {adding ? (
+        <form onSubmit={handleAdd} className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-stone-100 bg-white p-4">
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ชื่อพนักงาน"
+            className="rounded-full border border-stone-200 px-4 py-2 text-sm"
+          />
+          <input
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            placeholder="บทบาท"
+            className="rounded-full border border-stone-200 px-4 py-2 text-sm"
+          />
+          <button type="submit" className="rounded-full bg-orange-700 px-4 py-2 text-sm font-semibold text-white">
+            บันทึก
+          </button>
+        </form>
+      ) : null}
 
       <div className="rounded-2xl border border-stone-100 bg-white shadow-sm">
         <div className="border-b border-stone-100 px-6 py-4">
@@ -103,10 +144,22 @@ export default function StaffPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-3 text-stone-400">
-                    <button aria-label="แก้ไข" className="cursor-pointer transition hover:text-orange-600">
+                    <button
+                      aria-label="แก้ไข"
+                      onClick={() =>
+                        void updateStaffMember(member.id, {
+                          status: member.status === "active" ? "inactive" : "active",
+                        }).then(load)
+                      }
+                      className="cursor-pointer transition hover:text-orange-600"
+                    >
                       <Pencil size={16} />
                     </button>
-                    <button aria-label="ลบ" className="cursor-pointer transition hover:text-red-500">
+                    <button
+                      aria-label="ลบ"
+                      onClick={() => void deleteStaffMember(member.id).then(load)}
+                      className="cursor-pointer transition hover:text-red-500"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
