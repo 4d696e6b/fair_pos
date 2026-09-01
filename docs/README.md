@@ -22,3 +22,7 @@ Open http://localhost:3000
 - `features/` — Firestore reads and writes for fairs, shops, menus, orders
 
 Try it: `/` → click "ดูร้านค้า" on ตลาดนัดเชียงราก → click a shop → add items → "ชำระเงิน" to see the order-tracking screen.
+
+## Changelog (Thai)
+
+สรุปการเติม logic รอบ `feat/complete-pos-logic` อยู่ที่ [docs/changes/complete-pos-logic-th.md](changes/complete-pos-logic-th.md) และไฟล์ PDF [docs/changes/complete-pos-logic-th.pdf](changes/complete-pos-logic-th.pdf)
