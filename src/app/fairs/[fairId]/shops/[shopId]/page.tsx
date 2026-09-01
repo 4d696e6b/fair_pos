@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMenuForShop, getShop } from "@/lib/mock-data";
+import { getShop } from "@/features/fairs";
+import { listMenuForShop } from "@/features/menu";
 import { useOrder } from "@/lib/order-context";
-import { MenuCategory } from "@/lib/types";
+import { MenuCategory, MenuItem, Shop } from "@/lib/types";
 import CategoryTabs from "./components/CategoryTabs";
 import MenuGrid from "./components/MenuGrid";
 import CartSidebar from "./components/CartSidebar";
@@ -22,13 +23,22 @@ export default function ShopMenuPage({
   params: Promise<{ fairId: string; shopId: string }>;
 }) {
   const { fairId, shopId } = use(params);
-  const shop = getShop(shopId);
-  const menu = getMenuForShop(shopId);
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
   const [category, setCategory] = useState<MenuCategory>("เมนูหลัก");
   const { cart, addItem, updateQty, updateNote, subtotal, tax, total, placeOrder } = useOrder();
   const router = useRouter();
 
-  const items = menu.filter((m) => m.category === category);
+  useEffect(() => {
+    void Promise.all([getShop(shopId), listMenuForShop(shopId)]).then(
+      ([nextShop, nextMenu]) => {
+        setShop(nextShop);
+        setMenu(nextMenu);
+      },
+    );
+  }, [shopId]);
+
+  const items = menu.filter((m) => m.category === category && m.isAvailable !== false);
 
   const handleCheckout = () => {
     if (!shop || cart.length === 0) return;
