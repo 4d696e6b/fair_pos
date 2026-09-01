@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import Header from "@/components/shared/Header";
 import FilterPill from "@/components/shared/FilterPill";
 import FairCard from "@/components/shared/FairCard";
-import RecommendedShopCard from "./components/RecommendedShopCard";
-import { FAIRS, RECOMMENDED_SHOPS } from "@/lib/mock-data";
-import { FairCategory } from "@/lib/types";
+import { listFairs } from "@/features/fairs";
+import { Fair, FairCategory } from "@/lib/types";
 
 const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
   "ทั้งหมด",
@@ -20,11 +19,19 @@ const CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
+  const [allFairs, setAllFairs] = useState<Fair[]>([]);
+  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(
     "ทั้งหมด"
   );
 
-  const fairs = FAIRS.filter((fair) => {
+  useEffect(() => {
+    void listFairs()
+      .then(setAllFairs)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const fairs = allFairs.filter((fair) => {
     const matchesCategory = category === "ทั้งหมด" || fair.category === category;
     const matchesQuery = fair.name.toLowerCase().includes(query.toLowerCase());
     return matchesCategory && matchesQuery;
@@ -95,7 +102,11 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {fairs.length === 0 ? (
+        {loading ? (
+          <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
+            กำลังโหลดงานแฟร์...
+          </p>
+        ) : fairs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-200 py-12 text-center text-sm text-stone-400">
             ไม่พบงานแฟร์ที่ตรงกับการค้นหาของคุณ
           </p>

@@ -1,11 +1,12 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound, usePathname } from "next/navigation";
 import { OrderProvider } from "@/lib/order-context";
 import Header from "@/components/shared/Header";
 import ShopTabs from "./components/ShopTabs";
-import { getFair, getShop } from "@/lib/mock-data";
+import { getFair, getShop } from "@/features/fairs";
+import type { Fair, Shop } from "@/lib/types";
 
 export default function ShopLayout({
   children,
@@ -15,9 +16,25 @@ export default function ShopLayout({
   params: Promise<{ fairId: string; shopId: string }>;
 }) {
   const { fairId, shopId } = use(params);
-  const fair = getFair(fairId);
-  const shop = getShop(shopId);
+  const [fair, setFair] = useState<Fair | null | undefined>(undefined);
+  const [shop, setShop] = useState<Shop | null | undefined>(undefined);
   const pathname = usePathname();
+
+  useEffect(() => {
+    void Promise.all([getFair(fairId), getShop(shopId)]).then(([nextFair, nextShop]) => {
+      setFair(nextFair);
+      setShop(nextShop);
+    });
+  }, [fairId, shopId]);
+
+  if (fair === undefined || shop === undefined) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header variant="flow" backHref={`/fairs/${fairId}`} crumbs={[{ label: "กำลังโหลด...", active: true }]} />
+        <p className="px-6 py-10 text-center text-sm text-stone-500">กำลังโหลดร้านค้า...</p>
+      </div>
+    );
+  }
 
   if (!fair || !shop) notFound();
 
