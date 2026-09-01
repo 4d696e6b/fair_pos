@@ -7,6 +7,7 @@ export type OrderStatus = "pending" | "completed" | "cancelled";
 
 export type KitchenOrder = {
   id: string;
+  refCode?: string;
   table: string;
   queue: string;
   type: "dine-in" | "takeaway";
@@ -51,7 +52,7 @@ export default function OrderCard({
         <div>
           <p className="font-bold text-stone-900">{order.table} ({order.queue})</p>
           <p className="text-xs text-stone-400">
-            {order.id} • {order.type === "dine-in" ? "ทานที่ร้าน" : "รับกลับบ้าน"}
+            {order.refCode ?? order.id} • {order.type === "dine-in" ? "ทานที่ร้าน" : "รับกลับบ้าน"}
           </p>
         </div>
         {showAsNew ? (

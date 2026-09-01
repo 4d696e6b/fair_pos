@@ -1,11 +1,18 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getShop } from "@/lib/mock-data";
-import { useOrder } from "@/lib/order-context";
+import { getShop } from "@/features/fairs";
+import { listOrdersForShopCustomer } from "@/features/orders";
 import OrderStatusCard from "./components/OrderStatusCard";
 import OrderSummaryCard from "./components/OrderSummaryCard";
+import type { Order, Shop } from "@/lib/types";
+
+function customerStatus(status: Order["status"]) {
+  if (status === "ready" || status === "completed") return "ready" as const;
+  if (status === "preparing") return "preparing" as const;
+  return "received" as const;
+}
 
 export default function ShopOrdersPage({
   params,
@@ -13,23 +20,39 @@ export default function ShopOrdersPage({
   params: Promise<{ fairId: string; shopId: string }>;
 }) {
   const { fairId, shopId } = use(params);
-  const shop = getShop(shopId);
-  const { orders } = useOrder();
-
-  const shopOrders = useMemo(
-    () => orders.filter((o) => o.fairId === fairId && o.shopId === shopId),
-    [orders, fairId, shopId],
-  );
-
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [shopOrders, setShopOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  const activeOrder = useMemo(() => {
-    if (shopOrders.length === 0) return undefined;
-    return (
-      shopOrders.find((o) => o.id === selectedOrderId) ??
-      shopOrders[shopOrders.length - 1]
+  useEffect(() => {
+    void Promise.all([getShop(shopId), listOrdersForShopCustomer(shopId, fairId)]).then(
+      ([nextShop, nextOrders]) => {
+        setShop(nextShop);
+        setShopOrders(nextOrders);
+        setLoading(false);
+      },
     );
-  }, [shopOrders, selectedOrderId]);
+  }, [fairId, shopId]);
+
+  const displayOrders = shopOrders.map((order) => ({
+    ...order,
+    status: customerStatus(order.status),
+  }));
+
+  const activeOrder = useMemo(() => {
+    if (displayOrders.length === 0) return undefined;
+    return (
+      displayOrders.find((o) => o.id === selectedOrderId) ??
+      displayOrders[displayOrders.length - 1]
+    );
+  }, [displayOrders, selectedOrderId]);
+
+  if (loading) {
+    return (
+      <p className="px-6 py-20 text-center text-sm text-stone-500">กำลังโหลดออเดอร์...</p>
+    );
+  }
 
   if (!activeOrder) {
     return (
@@ -51,10 +74,10 @@ export default function ShopOrdersPage({
         order={activeOrder}
         shopName={shop?.name}
         boothNumber={shop?.boothNumber}
-        orders={shopOrders}
+        orders={displayOrders}
         onSelectOrder={setSelectedOrderId}
       />
-      <OrderSummaryCard orders={shopOrders} />
+      <OrderSummaryCard orders={displayOrders} />
     </div>
   );
 }

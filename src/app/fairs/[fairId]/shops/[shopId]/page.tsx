@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getShop } from "@/features/fairs";
 import { listMenuForShop } from "@/features/menu";
+import { createOrder } from "@/features/orders";
 import { useOrder } from "@/lib/order-context";
 import { MenuCategory, MenuItem, Shop } from "@/lib/types";
 import CategoryTabs from "./components/CategoryTabs";
@@ -26,7 +27,7 @@ export default function ShopMenuPage({
   const [shop, setShop] = useState<Shop | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [category, setCategory] = useState<MenuCategory>("เมนูหลัก");
-  const { cart, addItem, updateQty, updateNote, subtotal, tax, total, placeOrder } = useOrder();
+  const { cart, addItem, updateQty, updateNote, clearCart, subtotal, tax, total } = useOrder();
   const router = useRouter();
 
   useEffect(() => {
@@ -40,9 +41,18 @@ export default function ShopMenuPage({
 
   const items = menu.filter((m) => m.category === category && m.isAvailable !== false);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!shop || cart.length === 0) return;
-    placeOrder(fairId, shopId, shop.boothNumber);
+    await createOrder({
+      fairId,
+      shopId,
+      lines: cart,
+      subtotal,
+      tax,
+      total,
+      type: "takeaway",
+    });
+    clearCart();
     router.push(`/fairs/${fairId}/shops/${shopId}/orders`);
   };
 

@@ -118,7 +118,13 @@ export default function OrderStatusCard({
             <span className="text-xs">เวลาโดยประมาณ</span>
           </div>
           <p className="text-sm font-semibold text-stone-900">{order.estimatedMinutes}</p>
-          <p className="text-xs text-stone-400">สั่งเมื่อ: {order.createdAt}</p>
+          <p className="text-xs text-stone-400">
+            สั่งเมื่อ:{" "}
+            {new Date(order.createdAt).toLocaleString("th-TH", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
         </div>
       </div>
     </div>
