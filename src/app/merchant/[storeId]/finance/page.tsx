@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Store, Users, Package, Truck } from "lucide-react";
-import { getShopCosts } from "@/features/finance";
+import { Package, Pencil, Store, Truck, Users } from "lucide-react";
+import { getShopCosts, saveShopCosts } from "@/features/finance";
 import { listOrdersForShop } from "@/features/orders";
 import type { ShopCosts } from "@/lib/types";
 
@@ -17,37 +17,97 @@ const COST_META = [
 export default function FinancePage() {
   const { storeId } = useParams<{ storeId: string }>();
   const [costs, setCosts] = useState<ShopCosts | null>(null);
+  const [draft, setDraft] = useState<Omit<ShopCosts, "shopId"> | null>(null);
   const [grossRevenue, setGrossRevenue] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    const [nextCosts, orders] = await Promise.all([
+      getShopCosts(storeId),
+      listOrdersForShop(storeId),
+    ]);
+    setCosts(nextCosts);
+    setDraft({
+      boothRent: nextCosts.boothRent,
+      wages: nextCosts.wages,
+      ingredients: nextCosts.ingredients,
+      misc: nextCosts.misc,
+    });
+    setGrossRevenue(
+      orders
+        .filter((order) => order.status === "completed" || order.status === "ready")
+        .reduce((sum, order) => sum + order.total, 0),
+    );
+  };
 
   useEffect(() => {
-    void Promise.all([getShopCosts(storeId), listOrdersForShop(storeId)]).then(
-      ([nextCosts, orders]) => {
-        setCosts(nextCosts);
-        setGrossRevenue(
-          orders
-            .filter((order) => order.status === "completed" || order.status === "ready")
-            .reduce((sum, order) => sum + order.total, 0),
-        );
-      },
-    );
+    void load();
   }, [storeId]);
 
-  if (!costs) {
+  if (!costs || !draft) {
     return <p className="text-sm text-stone-400">กำลังโหลดข้อมูลการเงิน...</p>;
   }
 
-  const totalCosts = costs.boothRent + costs.wages + costs.ingredients + costs.misc;
-  const cogs = costs.ingredients;
-  const fixedCosts = costs.boothRent + costs.wages + costs.misc;
+  const display = editing ? draft : costs;
+  const totalCosts = display.boothRent + display.wages + display.ingredients + display.misc;
+  const cogs = display.ingredients;
+  const fixedCosts = display.boothRent + display.wages + display.misc;
   const grossProfit = grossRevenue - cogs;
   const netProfit = grossProfit - fixedCosts;
   const margin = grossRevenue ? Math.max(0, Math.round((netProfit / grossRevenue) * 100)) : 0;
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveShopCosts(storeId, draft);
+      setEditing(false);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-stone-900">การวิเคราะห์ต้นทุนและกำไร</h1>
-        <p className="mt-1 text-sm text-stone-400">คำนวณจากออเดอร์ที่เสร็จสิ้นและต้นทุนร้านใน Firestore</p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-stone-900">การวิเคราะห์ต้นทุนและกำไร</h1>
+          <p className="mt-1 text-sm text-stone-400">คำนวณจากออเดอร์ที่เสร็จสิ้นและต้นทุนร้านใน Firestore</p>
+        </div>
+        {editing ? (
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setDraft({
+                  boothRent: costs.boothRent,
+                  wages: costs.wages,
+                  ingredients: costs.ingredients,
+                  misc: costs.misc,
+                });
+                setEditing(false);
+              }}
+              className="cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-800"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={() => void handleSave()}
+              disabled={saving}
+              className="cursor-pointer rounded-full bg-orange-700 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-800 disabled:opacity-60"
+            >
+              {saving ? "กำลังบันทึก..." : "บันทึกต้นทุน"}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:border-orange-200"
+          >
+            <Pencil size={14} />
+            แก้ไขต้นทุน
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -56,16 +116,30 @@ export default function FinancePage() {
 
           <ul className="space-y-4">
             {COST_META.map(({ key, label, icon: Icon }) => (
-              <li key={key} className="flex items-center justify-between">
+              <li key={key} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2.5 text-sm text-stone-600">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
                     <Icon size={15} />
                   </span>
                   {label}
                 </span>
-                <span className="font-semibold text-stone-900">
-                  ฿{costs[key].toLocaleString()}.00
-                </span>
+                {editing ? (
+                  <input
+                    type="number"
+                    min={0}
+                    value={draft[key]}
+                    onChange={(e) =>
+                      setDraft((prev) =>
+                        prev ? { ...prev, [key]: Number(e.target.value) || 0 } : prev,
+                      )
+                    }
+                    className="w-32 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-right text-sm font-semibold outline-none focus:border-orange-400"
+                  />
+                ) : (
+                  <span className="font-semibold text-stone-900">
+                    ฿{costs[key].toLocaleString()}.00
+                  </span>
+                )}
               </li>
             ))}
           </ul>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Download, Filter, Search } from "lucide-react";
 import { listOrdersForShop } from "@/features/orders";
-import type { Order } from "@/lib/types";
+import type { Order, OrderType } from "@/lib/types";
 
 type HistoryStatus = "completed" | "preparing" | "cancelled";
+type DateFilter = "all" | "today" | "7days";
 
 function toHistoryStatus(status: Order["status"]): HistoryStatus {
   if (status === "cancelled") return "cancelled";
@@ -27,28 +28,53 @@ const TABS: { key: "all" | HistoryStatus; label: string }[] = [
   { key: "cancelled", label: "ยกเลิก" },
 ];
 
+function csvEscape(value: string) {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replaceAll('"', '""')}"`;
+  }
+  return value;
+}
+
 export default function OrderHistoryPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const [tab, setTab] = useState<"all" | HistoryStatus>("all");
   const [search, setSearch] = useState("");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | OrderType>("all");
 
   useEffect(() => {
     void listOrdersForShop(storeId).then(setAllOrders);
   }, [storeId]);
 
-  const mapped = allOrders.map((order) => {
-    const created = new Date(order.createdAt);
-    return {
-      id: order.refCode,
-      date: created.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }),
-      time: created.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
-      total: order.total,
-      status: toHistoryStatus(order.status),
-      employee: "-",
-      createdAt: created,
-    };
-  });
+  const mapped = useMemo(() => {
+    const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    return allOrders
+      .filter((order) => (typeFilter === "all" ? true : order.type === typeFilter))
+      .filter((order) => {
+        const created = new Date(order.createdAt).getTime();
+        if (dateFilter === "today") return created >= startOfToday.getTime();
+        if (dateFilter === "7days") return now - created <= 7 * 24 * 60 * 60 * 1000;
+        return true;
+      })
+      .map((order) => {
+        const created = new Date(order.createdAt);
+        return {
+          id: order.refCode,
+          date: created.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }),
+          time: created.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+          total: order.total,
+          status: toHistoryStatus(order.status),
+          employee: order.handledBy || "-",
+          type: order.type,
+          createdAt: created,
+        };
+      });
+  }, [allOrders, dateFilter, typeFilter]);
 
   const orders = mapped.filter(
     (o) => (tab === "all" || o.status === tab) && o.id.toLowerCase().includes(search.toLowerCase()),
@@ -65,6 +91,29 @@ export default function OrderHistoryPage() {
   const cancelledCount = todayOrders.filter((o) => o.status === "cancelled").length;
   const avgPerBill = todayCount ? Math.round(totalSales / todayCount) : 0;
 
+  const handleDownload = () => {
+    const header = ["Order ID", "วันที่", "เวลา", "ประเภท", "ยอดรวม", "สถานะ", "พนักงาน"];
+    const rows = orders.map((order) => [
+      order.id,
+      order.date,
+      order.time,
+      order.type === "dine-in" ? "ทานที่ร้าน" : "รับกลับบ้าน",
+      order.total.toFixed(2),
+      STATUS_STYLES[order.status].label,
+      order.employee,
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => csvEscape(String(cell))).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `order-history-${storeId}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -72,7 +121,7 @@ export default function OrderHistoryPage() {
           <h1 className="text-xl font-bold text-stone-900">ประวัติคำสั่งซื้อและบันทึก</h1>
           <p className="mt-1 text-sm text-stone-400">ดูและตรวจสอบคำสั่งซื้อทั้งหมดที่ดำเนินการในระบบ</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <div className="relative">
             <Search
               size={16}
@@ -87,16 +136,69 @@ export default function OrderHistoryPage() {
           </div>
           <button
             aria-label="ตัวกรอง"
-            className="cursor-pointer rounded-full border border-stone-200 bg-white p-2.5 text-stone-500 transition hover:bg-stone-50"
+            onClick={() => setShowFilters((open) => !open)}
+            className={
+              "cursor-pointer rounded-full border bg-white p-2.5 transition hover:bg-stone-50 " +
+              (showFilters || dateFilter !== "all" || typeFilter !== "all"
+                ? "border-orange-300 text-orange-700"
+                : "border-stone-200 text-stone-500")
+            }
           >
             <Filter size={16} />
           </button>
           <button
             aria-label="ดาวน์โหลด"
+            onClick={handleDownload}
             className="cursor-pointer rounded-full border border-stone-200 bg-white p-2.5 text-stone-500 transition hover:bg-stone-50"
           >
             <Download size={16} />
           </button>
+          {showFilters ? (
+            <div className="absolute right-0 top-12 z-10 w-64 rounded-2xl border border-stone-100 bg-white p-4 shadow-lg">
+              <p className="mb-2 text-xs font-semibold text-stone-500">ช่วงเวลา</p>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["all", "ทั้งหมด"],
+                    ["today", "วันนี้"],
+                    ["7days", "7 วัน"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setDateFilter(key)}
+                    className={
+                      "rounded-full px-3 py-1 text-xs font-medium " +
+                      (dateFilter === key ? "bg-orange-700 text-white" : "bg-stone-100 text-stone-600")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mb-2 text-xs font-semibold text-stone-500">ประเภท</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["all", "ทั้งหมด"],
+                    ["dine-in", "ทานที่ร้าน"],
+                    ["takeaway", "รับกลับบ้าน"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setTypeFilter(key)}
+                    className={
+                      "rounded-full px-3 py-1 text-xs font-medium " +
+                      (typeFilter === key ? "bg-orange-700 text-white" : "bg-stone-100 text-stone-600")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
