@@ -2,9 +2,8 @@
 
 import { X, Store as StoreIcon } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { useStore, StoreCategory } from "@/lib/store-context";
 
-const CATEGORIES: StoreCategory[] = ["เมนูหลัก", "ของทานเล่น", "เครื่องดื่ม", "ของหวาน"];
+const CATEGORIES = ["อาหารไทย", "ของทานเล่น", "เครื่องดื่ม", "ของหวาน"] as const;
 
 const inputClass =
   "w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
@@ -16,11 +15,10 @@ export default function CreateStoreModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated?: (storeId: string) => void;
+  onCreated?: (name: string, category: string, description?: string) => Promise<string> | string;
 }) {
-  const { createStore } = useStore();
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<StoreCategory>(CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -40,7 +38,7 @@ export default function CreateStoreModal({
     reset();
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!name.trim()) {
@@ -49,13 +47,13 @@ export default function CreateStoreModal({
     }
 
     setPending(true);
-    const store = createStore({
-      name: name.trim(),
-      category,
-      description: description.trim() || undefined,
-    });
-    onCreated?.(store.id);
-    handleClose();
+    try {
+      await onCreated?.(name.trim(), category, description.trim() || undefined);
+      handleClose();
+    } catch {
+      setError("สร้างร้านค้าไม่สำเร็จ กรุณาลองใหม่");
+      setPending(false);
+    }
   };
 
   return (
@@ -107,7 +105,7 @@ export default function CreateStoreModal({
             </span>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as StoreCategory)}
+              onChange={(e) => setCategory(e.target.value)}
               className={inputClass}
             >
               {CATEGORIES.map((c) => (

@@ -13,9 +13,10 @@ import {
   where,
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/collections";
-import { firestore } from "@/lib/firebase";
+import { firestore, storage } from "@/lib/firebase";
 import { seedDemoCatalog } from "@/lib/seed-demo";
 import type { SellingStyle, Shop } from "@/lib/types";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 function shopsCol() {
   return collection(firestore, COLLECTIONS.shops);
@@ -124,4 +125,11 @@ export async function updateShop(
     ...patch,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function uploadShopImage(shopId: string, file: File): Promise<string> {
+  const path = `stores/${shopId}/cover-${Date.now()}-${file.name}`;
+  const imageRef = ref(storage, path);
+  await uploadBytes(imageRef, file);
+  return getDownloadURL(imageRef);
 }

@@ -8,4 +8,5 @@ export {
   listShopsForFair,
   updateShop,
   upsertShop,
+  uploadShopImage,
 } from "./services/shops";

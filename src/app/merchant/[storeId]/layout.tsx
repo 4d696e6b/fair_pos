@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   ClipboardList,
   History,
@@ -13,7 +13,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useStore } from "@/lib/store-context";
+import { getShop } from "@/features/fairs";
 import Header from "@/components/shared/Header";
 
 type NavItem = { href: string; label: string; icon: typeof ClipboardList };
@@ -50,17 +50,22 @@ function getNavGroups(storeId: string): NavGroup[] {
 export default function MerchantStoreLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const params = useParams<{ storeId: string }>();
-  const { stores } = useStore();
   const storeId = params.storeId;
-  const store = stores.find((s) => s.id === storeId);
+  const [storeName, setStoreName] = useState("ร้านค้า");
   const navGroups = getNavGroups(storeId);
+
+  useEffect(() => {
+    void getShop(storeId).then((shop) => {
+      if (shop) setStoreName(shop.name);
+    });
+  }, [storeId]);
 
   return (
     <div className="flex min-h-screen flex-col bg-stone-50">
       <Header
         variant="flow"
         backHref="/merchant"
-        crumbs={[{ label: store?.name ?? "ร้านค้า", active: true }]}
+        crumbs={[{ label: storeName, active: true }]}
       />
 
       <div className="flex sticky flex-1">

@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { MapPin, ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ImagePlus, ChevronDown, Loader2, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FairSearchSelect, { type FairOption } from "./components/FairSearchSelect";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-// import { storage } from "@/lib/firebase";
+import { getShop, listFairs, updateShop, uploadShopImage } from "@/features/fairs";
 
 const CATEGORY_OPTIONS = ["อาหารไทย", "อาหารทานเล่น", "เครื่องดื่ม", "ของหวาน", "อาหารนานาชาติ", "อาหารเพื่อสุขภาพ", "อาหารทะเล", "อาหารมังสวิรัติ"];
 
@@ -20,16 +20,14 @@ type SellingStyle = (typeof SELLING_STYLE_OPTIONS)[number]["value"];
 const inputClass =
   "w-full rounded-lg text-start border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
 
-// TODO: replace with the real store id (e.g. from auth context / route params)
-const STORE_ID = "current-store-id";
-
 export default function StoreInfoPage() {
-  const [name, setName] = useState("อมยิ้ม ตามสั่ง");
+  const { storeId } = useParams<{ storeId: string }>();
+  const [name, setName] = useState("");
   const [tax, setTax] = useState(0);
   const [serviceCharge, setServiceCharge] = useState(0);
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORY_OPTIONS[0]);
   const [sellingStyle, setSellingStyle] = useState<SellingStyle>("both");
+  const [fairs, setFairs] = useState<FairOption[]>([]);
 
   const [storeImageUrl, setStoreImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -39,29 +37,65 @@ export default function StoreInfoPage() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [selectedFair, setSelectedFair] = useState<FairOption | null>(null);
   const [boothNumber, setBoothNumber] = useState("");
+
+  useEffect(() => {
+    void Promise.all([getShop(storeId), listFairs()]).then(([shop, nextFairs]) => {
+      setFairs(
+        nextFairs.map((fair) => ({
+          id: fair.id,
+          name: fair.name,
+          venue: fair.location,
+          isOpenNow: true,
+        })),
+      );
+      if (!shop) return;
+      setName(shop.name);
+      setDescription(shop.description ?? "");
+      setSelectedCategory(shop.category);
+      setSellingStyle(shop.sellingStyle ?? "both");
+      setTax(shop.taxRate ?? 0);
+      setServiceCharge(shop.serviceCharge ?? 0);
+      setStoreImageUrl(shop.image || null);
+      setBoothNumber(shop.boothNumber);
+      const fair = nextFairs.find((item) => item.id === shop.fairId);
+      setSelectedFair(
+        fair
+          ? { id: fair.id, name: fair.name, venue: fair.location, isOpenNow: true }
+          : null,
+      );
+    });
+  }, [storeId]);
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
-    // try {
-    //   const path = `stores/${STORE_ID}/cover-${Date.now()}-${file.name}`;
-    //   const imageRef = ref(storage, path);
-    //   await uploadBytes(imageRef, file);
-    //   const url = await getDownloadURL(imageRef);
-    //   setStoreImageUrl(url);
-    // } catch (err) {
-    //   console.error("Failed to upload store image:", err);
-    // } finally {
-    //   setIsUploadingImage(false);
-    //   e.target.value = ""; // allow re-selecting the same file
-    // }
+    try {
+      const url = await uploadShopImage(storeId, file);
+      setStoreImageUrl(url);
+    } catch (err) {
+      console.error("Failed to upload store image:", err);
+    } finally {
+      setIsUploadingImage(false);
+      e.target.value = "";
+    }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: write name, description, category, sellingStyle, storeImageUrl to Firestore
+      await updateShop(storeId, {
+        name,
+        description,
+        category: selectedCategory ?? CATEGORY_OPTIONS[0],
+        sellingStyle,
+        image: storeImageUrl ?? "",
+        taxRate: tax,
+        serviceCharge,
+        fairId: selectedFair?.id ?? "",
+        boothNumber,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -333,7 +367,7 @@ export default function StoreInfoPage() {
              <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-stone-500">
                งานอีเวนต์ (Fair)
              </span>
-             <FairSearchSelect value={selectedFair} onChange={setSelectedFair} />
+             <FairSearchSelect value={selectedFair} onChange={setSelectedFair} fairs={fairs} />
            </div>
            
            <label className="block">
