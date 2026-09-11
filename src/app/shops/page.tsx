@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/shared/Header";
 import RestaurantCard from "@/components/shared/RestaurantCard";
-import { listAllShops } from "@/features/fairs";
-import type { Shop } from "@/lib/types";
+import { listAllShops, listFairs } from "@/features/fairs";
+import type { Fair, Shop } from "@/lib/types";
 
 export default function ShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
+  const [fairs, setFairs] = useState<Fair[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void listAllShops()
-      .then(setShops)
+    void Promise.all([listAllShops(), listFairs()])
+      .then(([nextShops, nextFairs]) => {
+        setShops(nextShops);
+        setFairs(nextFairs);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const fairNames = useMemo(
+    () => Object.fromEntries(fairs.map((fair) => [fair.id, fair.name])),
+    [fairs],
+  );
 
   return (
     <div>
@@ -30,7 +39,7 @@ export default function ShopsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {shops.map((shop) => (
-              <RestaurantCard key={shop.id} shop={shop} />
+              <RestaurantCard key={shop.id} shop={shop} fairName={fairNames[shop.fairId]} />
             ))}
           </div>
         )}

@@ -2,13 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import type { Shop } from "@/lib/types";
+import { shopAddress } from "@/lib/shop-address";
 import { activeTags } from "@/lib/shop-tags";
 
-const PLACEHOLDER =
-  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800&auto=format&fit=crop";
+const PLACEHOLDER = "/emptyImage.png";
 
-export default function RestaurantCard({ shop }: { shop: Shop }) {
+export default function RestaurantCard({
+  shop,
+  fairName,
+}: {
+  shop: Shop;
+  fairName?: string;
+}) {
   const tags = activeTags(shop);
+  const address = shopAddress(shop, fairName);
   const href = shop.fairId
     ? `/fairs/${shop.fairId}/shops/${shop.id}`
     : `/shops/${shop.id}`;
@@ -22,25 +29,24 @@ export default function RestaurantCard({ shop }: { shop: Shop }) {
           fill
           className="object-cover transition duration-300 group-hover:scale-105"
         />
-        {tags[0] ? (
+        {shop.category ? (
           <span className="absolute right-3 top-3 rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white shadow">
-            {tags[0].label}
+            {shop.category}
           </span>
         ) : null}
       </div>
 
       <div className="space-y-3 p-4">
         <h3 className="text-base font-bold text-stone-900">{shop.name}</h3>
-        <p className="text-sm text-stone-500">{shop.category}</p>
-        {shop.location ? (
+        {address ? (
           <div className="flex items-center gap-1.5 text-sm text-stone-500">
             <MapPin size={14} />
-            <span>{shop.location}</span>
+            <span>{address}</span>
           </div>
         ) : null}
-        {tags.length > 1 ? (
+        {tags.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
-            {tags.slice(1).map((tag) => (
+            {tags.map((tag) => (
               <span
                 key={tag.id}
                 className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700"

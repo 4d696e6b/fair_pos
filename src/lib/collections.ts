@@ -7,4 +7,5 @@ export const COLLECTIONS = {
   tables: "tables",
   staff: "staff",
   shopCosts: "shopCosts",
+  notifications: "notifications",
 } as const;

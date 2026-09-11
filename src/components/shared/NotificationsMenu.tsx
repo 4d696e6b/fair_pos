@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { listShopsByOwner } from "@/features/fairs";
+import { listNotificationsForUser } from "@/features/notifications";
 import { isOpenKitchenStatus, listOrdersForShop, listOrdersForUser } from "@/features/orders";
 import { useAuth } from "@/lib/auth-context";
 import type { Order } from "@/lib/types";
@@ -33,10 +34,23 @@ export default function NotificationsMenu() {
     let cancelled = false;
 
     const load = async () => {
+      let pushedNotices: Notice[] = [];
+      try {
+        const pushed = await listNotificationsForUser(user.uid);
+        pushedNotices = pushed.map((notice) => ({
+          id: notice.id,
+          title: notice.title,
+          detail: notice.detail,
+          href: notice.href,
+        }));
+      } catch {
+        pushedNotices = [];
+      }
+
       if (merchantMode) {
         const shops = await listShopsByOwner(user.uid);
         const batches = await Promise.all(shops.slice(0, 5).map((shop) => listOrdersForShop(shop.id)));
-        const items: Notice[] = [];
+        const items: Notice[] = [...pushedNotices];
         shops.forEach((shop, index) => {
           batches[index]
             .filter((order) => isOpenKitchenStatus(order.status))
@@ -56,14 +70,15 @@ export default function NotificationsMenu() {
 
       const orders = await listOrdersForUser(user.uid);
       if (!cancelled) {
-        setNotices(
-          orders.slice(0, 8).map((order) => ({
+        setNotices([
+          ...pushedNotices,
+          ...orders.slice(0, 8).map((order) => ({
             id: order.id,
             title: `คิว ${order.queueNumber}`,
             detail: STATUS_LABEL[order.status],
             href: `/fairs/${order.fairId}/shops/${order.shopId}/orders`,
           })),
-        );
+        ].slice(0, 8));
       }
     };
 
@@ -84,7 +99,10 @@ export default function NotificationsMenu() {
           }
           setOpen((value) => !value);
         }}
-        className="transition hover:text-stone-900"
+        className={
+          "cursor-pointer transition " +
+          (open ? "text-orange-600" : "hover:text-stone-900")
+        }
       >
         <Bell size={20} />
       </button>

@@ -3,6 +3,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
@@ -60,4 +61,8 @@ export async function updateTable(
     ...patch,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function deleteTable(tableId: string): Promise<void> {
+  await deleteDoc(doc(firestore, COLLECTIONS.tables, tableId));
 }

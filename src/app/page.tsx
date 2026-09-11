@@ -13,14 +13,9 @@ import HorizontalCardRow, {
 import RestaurantCard from "@/components/shared/RestaurantCard";
 import { listAllShops, listFairs } from "@/features/fairs";
 import { activeTags, uniqueActiveTagLabels } from "@/lib/shop-tags";
-import type { Fair, FairCategory, Shop } from "@/lib/types";
+import { FAIR_FORMAT_CATEGORIES, type Fair, type FairCategory, type Shop } from "@/lib/types";
 
-const FAIR_CATEGORIES: (FairCategory | "ทั้งหมด")[] = [
-  "ทั้งหมด",
-  "ตลาดนัด",
-  "ของกิน",
-  "ของใช้",
-];
+const FAIR_CATEGORIES: (FairCategory | "ทั้งหมด")[] = ["ทั้งหมด", ...FAIR_FORMAT_CATEGORIES];
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
@@ -42,6 +37,10 @@ export default function HomePage() {
   }, []);
 
   const tagLabels = useMemo(() => uniqueActiveTagLabels(shops), [shops]);
+  const fairNames = useMemo(
+    () => Object.fromEntries(allFairs.map((fair) => [fair.id, fair.name])),
+    [allFairs],
+  );
 
   const fairs = allFairs.filter((fair) => {
     const matchesCategory =
@@ -53,7 +52,7 @@ export default function HomePage() {
 
   const filteredShops = shops.filter((shop) => {
     const tags = activeTags(shop);
-    const haystack = [shop.name, shop.category, shop.location, ...tags.map((tag) => tag.label)]
+    const haystack = [shop.name, shop.category, shop.location, shop.boothNumber, ...tags.map((tag) => tag.label)]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -98,17 +97,6 @@ export default function HomePage() {
               ค้นหา
             </button>
           </div>
-
-          <div className="relative z-10 flex flex-wrap justify-center gap-2">
-            {FAIR_CATEGORIES.map((category) => (
-              <FilterPill
-                key={category}
-                label={category}
-                active={fairCategory === category}
-                onClick={() => setFairCategory(category)}
-              />
-            ))}
-          </div>
         </div>
       </section>
 
@@ -121,6 +109,17 @@ export default function HomePage() {
           >
             ดูทั้งหมด
           </Link>
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-2">
+          {FAIR_CATEGORIES.map((category) => (
+            <FilterPill
+              key={category}
+              label={category}
+              active={fairCategory === category}
+              onClick={() => setFairCategory(category)}
+            />
+          ))}
         </div>
 
         {loading ? (
@@ -182,7 +181,7 @@ export default function HomePage() {
           <HorizontalCardRow>
             {filteredShops.map((shop) => (
               <CarouselCard key={shop.id}>
-                <RestaurantCard shop={shop} />
+                <RestaurantCard shop={shop} fairName={fairNames[shop.fairId]} />
               </CarouselCard>
             ))}
           </HorizontalCardRow>

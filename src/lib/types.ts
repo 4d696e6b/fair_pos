@@ -1,4 +1,12 @@
-export type FairCategory = "ตลาดนัด" | "ของกิน" | "ของใช้";
+export const FAIR_FORMAT_CATEGORIES = [
+  "ตลาดนัด",
+  "ตลาดสด",
+  "ตลาดกลางคืน",
+  "ตลาดถนนคนเดิน",
+  "ตลาดค้าส่ง",
+] as const;
+
+export type FairCategory = (typeof FAIR_FORMAT_CATEGORIES)[number];
 
 export type Fair = {
   id: string;
@@ -6,8 +14,10 @@ export type Fair = {
   dateRange: string;
   location: string;
   image: string;
+  mapImage?: string;
   badge?: string;
   category: FairCategory;
+  ownerUserId?: string;
 };
 
 export type SellingStyle = "takeaway" | "dine-in" | "both";
@@ -76,12 +86,14 @@ export type Order = {
   lines: CartLine[];
   subtotal: number;
   tax: number;
+  serviceCharge?: number;
   total: number;
   status: OrderStatus;
   createdAt: string;
   completedAt?: string;
   handledBy?: string;
   estimatedMinutes: string;
+  nudgedAt?: string;
 };
 
 export type TableStatus = "empty" | "occupied" | "awaiting-payment";

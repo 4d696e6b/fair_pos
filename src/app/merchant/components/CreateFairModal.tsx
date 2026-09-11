@@ -1,10 +1,9 @@
 "use client";
 
-import { X, CalendarDays } from "lucide-react";
+import { X, CalendarDays, ImagePlus } from "lucide-react";
 import { FormEvent, useState } from "react";
-import type { FairCategory } from "@/lib/types";
-
-const CATEGORIES: FairCategory[] = ["ตลาดนัด", "ของกิน", "ของใช้"];
+import { FAIR_FORMAT_CATEGORIES, type FairCategory } from "@/lib/types";
+import Dropdown from "@/components/shared/Dropdown";
 
 const inputClass =
   "w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 outline-none transition focus:border-orange-400 focus:bg-white";
@@ -21,12 +20,15 @@ export default function CreateFairModal({
     dateRange: string;
     location: string;
     category: FairCategory;
+    mapFile?: File;
   }) => Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [dateRange, setDateRange] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState<FairCategory>("ตลาดนัด");
+  const [mapFile, setMapFile] = useState<File | null>(null);
+  const [mapPreview, setMapPreview] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -37,6 +39,8 @@ export default function CreateFairModal({
     setDateRange("");
     setLocation("");
     setCategory("ตลาดนัด");
+    setMapFile(null);
+    setMapPreview("");
     setError("");
     setPending(false);
   };
@@ -59,6 +63,7 @@ export default function CreateFairModal({
         dateRange: dateRange.trim(),
         location: location.trim(),
         category,
+        mapFile: mapFile ?? undefined,
       });
       handleClose();
     } catch {
@@ -110,20 +115,46 @@ export default function CreateFairModal({
             required
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="สถานที่"
+            placeholder="สถานที่ เช่น soi-joo"
             className={inputClass}
           />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as FairCategory)}
-            className={inputClass}
-          >
-            {CATEGORIES.map((item) => (
-              <option key={item} value={item}>
+          <Dropdown
+            items={[...FAIR_FORMAT_CATEGORIES]}
+            getKey={(item) => item}
+            isSelected={(item) => item === category}
+            onSelect={setCategory}
+            renderTrigger={({ isOpen }) => (
+              <div className={`${inputClass} flex cursor-pointer items-center justify-between`}>
+                <span>{category}</span>
+                <span className={`text-xs text-stone-400 ${isOpen ? "rotate-180" : ""}`}>▼</span>
+              </div>
+            )}
+            renderItem={(item, { isSelected }) => (
+              <span className={isSelected ? "font-semibold text-orange-600" : "text-stone-600"}>
                 {item}
-              </option>
-            ))}
-          </select>
+              </span>
+            )}
+          />
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-stone-500">แผนที่งาน (ไม่บังคับ)</span>
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 px-4 py-6 text-sm text-stone-500 hover:border-orange-300">
+              <ImagePlus size={18} />
+              {mapFile ? "เปลี่ยนรูปแผนที่" : "อัปโหลดรูปแผนที่"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setMapFile(file);
+                  setMapPreview(file ? URL.createObjectURL(file) : "");
+                }}
+              />
+            </label>
+            {mapPreview ? (
+              <img src={mapPreview} alt="แผนที่งาน" className="mt-2 h-32 w-full rounded-xl object-cover" />
+            ) : null}
+          </label>
           {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
           <button
             type="submit"

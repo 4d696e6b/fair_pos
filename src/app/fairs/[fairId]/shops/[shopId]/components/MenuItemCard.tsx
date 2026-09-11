@@ -12,7 +12,7 @@ export default function MenuItemCard({
   return (
     <div className="overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm">
       <div className="relative h-28 w-full">
-        <Image src={item.image} alt={item.name} fill className="object-cover" />
+        <Image src={item.image || "/emptyImage.png"} alt={item.name} fill className="object-cover" />
       </div>
       <div className="p-3">
         <p className="truncate text-sm font-semibold text-stone-900">
