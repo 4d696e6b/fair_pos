@@ -36,18 +36,25 @@ export default function ShopLayout({
     );
   }
 
-  if (!fair || !shop) notFound();
+  if (!shop) notFound();
 
   const isOrdersTab = pathname.endsWith("/orders");
+  const fairName = fair?.name ?? shop.location ?? "ร้านค้า";
+  const backHref = fair ? `/fairs/${fairId}` : "/";
 
   return (
-    <OrderProvider>
+    <OrderProvider
+      taxRate={shop.taxRate ?? 0}
+      serviceChargeRate={shop.serviceCharge ?? 0}
+    >
       <div className="flex min-h-screen flex-col">
         <Header
           variant="flow"
-          backHref={`/fairs/${fairId}`}
+          backHref={backHref}
           crumbs={[
-            { label: fair.name, href: `/fairs/${fairId}` },
+            ...(fair
+              ? [{ label: fairName, href: `/fairs/${fairId}` }]
+              : [{ label: fairName }]),
             { label: shop.name, active: true },
           ]}
           tabs={

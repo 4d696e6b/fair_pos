@@ -16,17 +16,22 @@ import {
 import { getShop } from "@/features/fairs";
 import Header from "@/components/shared/Header";
 import { useAuth } from "@/lib/auth-context";
+import type { SellingStyle } from "@/lib/types";
 
 type NavItem = { href: string; label: string; icon: typeof ClipboardList };
 type NavGroup = { title: string; items: NavItem[] };
 
-function getNavGroups(storeId: string): NavGroup[] {
+function getNavGroups(storeId: string, sellingStyle?: SellingStyle): NavGroup[] {
   return [
     {
       title: "การดำเนินงาน",
       items: [
         { href: `/merchant/${storeId}/orders`, label: "ออเดอร์", icon: ClipboardList },
-        { href: `/merchant/${storeId}/tables`, label: "จัดการโต๊ะ", icon: LayoutGrid },
+        {
+          href: `/merchant/${storeId}/tables`,
+          label: sellingStyle === "takeaway" ? "จัดการออเดอร์" : "จัดการโต๊ะ",
+          icon: LayoutGrid,
+        },
       ],
     },
     {
@@ -55,8 +60,9 @@ export default function MerchantStoreLayout({ children }: { children: ReactNode 
   const storeId = params.storeId;
   const { user, loading } = useAuth();
   const [storeName, setStoreName] = useState("ร้านค้า");
+  const [sellingStyle, setSellingStyle] = useState<SellingStyle>("both");
   const [allowed, setAllowed] = useState(false);
-  const navGroups = getNavGroups(storeId);
+  const navGroups = getNavGroups(storeId, sellingStyle);
 
   useEffect(() => {
     if (loading) return;
@@ -70,6 +76,7 @@ export default function MerchantStoreLayout({ children }: { children: ReactNode 
         return;
       }
       setStoreName(shop.name);
+      setSellingStyle(shop.sellingStyle ?? "both");
       setAllowed(true);
     });
   }, [storeId, user, loading, router]);

@@ -2,6 +2,7 @@
 
 export {
   completeOpenOrdersForTable,
+  completeOrders,
   createOrder,
   getOrder,
   guestOrderIds,
@@ -10,6 +11,7 @@ export {
   listOrdersForShopCustomer,
   listOrdersForUser,
   listenOrdersForShop,
+  markOrderNudged,
   rememberGuestOrder,
   updateOrderStatus,
 } from "./services/orders";

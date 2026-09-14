@@ -19,13 +19,24 @@ type OrderSummary = {
   lines: OrderLine[];
   subtotal: number;
   tax: number;
+  serviceCharge?: number;
   total: number;
 };
 
-export default function OrderSummaryCard({ orders }: { orders: OrderSummary[] }) {
+export default function OrderSummaryCard({
+  orders,
+  taxRate = 0,
+  serviceChargeRate = 0,
+}: {
+  orders: OrderSummary[];
+  taxRate?: number;
+  serviceChargeRate?: number;
+}) {
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const isSingle = orders.length === 1;
   const grandTotal = orders.reduce((sum, order) => sum + order.total, 0);
+  const showTax = taxRate > 0;
+  const showService = serviceChargeRate > 0;
 
   const toggleOrder = (id: string) => {
     setOpenIds((prev) => {
@@ -106,10 +117,18 @@ export default function OrderSummaryCard({ orders }: { orders: OrderSummary[] })
                         <span>ยอดรวมสินค้า</span>
                         <span>฿{order.subtotal.toFixed(2)}</span>
                         </li>
-                        <li className="flex justify-between">
-                        <span>ภาษีมูลค่าเพิ่ม</span>
-                        <span>฿{order.tax.toFixed(2)}</span>
-                        </li>
+                        {showTax ? (
+                          <li className="flex justify-between">
+                          <span>ภาษีมูลค่าเพิ่ม ({taxRate}%)</span>
+                          <span>฿{order.tax.toFixed(2)}</span>
+                          </li>
+                        ) : null}
+                        {showService ? (
+                          <li className="flex justify-between">
+                          <span>ค่าบริการ ({serviceChargeRate}%)</span>
+                          <span>฿{(order.serviceCharge ?? 0).toFixed(2)}</span>
+                          </li>
+                        ) : null}
                         <li className="flex justify-between font-semibold text-stone-700">
                         <span>รวมออเดอร์นี้</span>
                         <span>฿{order.total.toFixed(2)}</span>
@@ -128,10 +147,18 @@ export default function OrderSummaryCard({ orders }: { orders: OrderSummary[] })
           <span>ยอดรวมสินค้า</span>
           <span>฿{orders.reduce((sum, order) => sum + order.subtotal, 0).toFixed(2)}</span>
         </div>
-        <div className="flex justify-between py-3 text-sm text-stone-500">
-          <span>ภาษีมูลค่าเพิ่ม</span>
-          <span>฿{orders.reduce((sum, order) => sum + order.tax, 0).toFixed(2)}</span>
-        </div>
+        {showTax ? (
+          <div className="flex justify-between py-3 text-sm text-stone-500">
+            <span>ภาษีมูลค่าเพิ่ม ({taxRate}%)</span>
+            <span>฿{orders.reduce((sum, order) => sum + order.tax, 0).toFixed(2)}</span>
+          </div>
+        ) : null}
+        {showService ? (
+          <div className="flex justify-between py-3 text-sm text-stone-500">
+            <span>ค่าบริการ ({serviceChargeRate}%)</span>
+            <span>฿{orders.reduce((sum, order) => sum + (order.serviceCharge ?? 0), 0).toFixed(2)}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between border-t border-stone-200 pt-3 text-base font-bold text-stone-900">
           <span>ยอดรวมทั้งหมด</span>
           <span>฿{grandTotal.toFixed(2)}</span>

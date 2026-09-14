@@ -8,7 +8,7 @@ export default function FairCard({ fair }: { fair: Fair }) {
     <div className="group overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm transition hover:shadow-md">
       <div className="relative h-40 w-full overflow-hidden">
         <Image
-          src={fair.image}
+          src={fair.image || "/emptyImage.png"}
           alt={fair.name}
           fill
           className="object-cover transition duration-300 group-hover:scale-105"

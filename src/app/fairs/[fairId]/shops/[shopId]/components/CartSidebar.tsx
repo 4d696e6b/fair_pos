@@ -9,7 +9,10 @@ export default function CartSidebar({
   onClearAll,
   subtotal,
   tax,
+  serviceCharge,
   total,
+  taxRate,
+  serviceChargeRate,
   onCheckout,
   checkoutDisabled,
   checkoutLabel,
@@ -27,7 +30,10 @@ export default function CartSidebar({
   onClearAll: () => void;
   subtotal: number;
   tax: number;
+  serviceCharge?: number;
   total: number;
+  taxRate?: number;
+  serviceChargeRate?: number;
   onCheckout: () => void;
   checkoutDisabled?: boolean;
   checkoutLabel?: string;
@@ -73,7 +79,7 @@ export default function CartSidebar({
                 type="button"
                 onClick={() => onOrderTypeChange("takeaway")}
                 className={
-                  "flex-1 rounded-full px-3 py-1.5 text-xs font-medium " +
+                  "flex-1 cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium " +
                   (orderType === "takeaway" ? "bg-orange-700 text-white" : "bg-stone-100 text-stone-600")
                 }
               >
@@ -85,7 +91,7 @@ export default function CartSidebar({
                 type="button"
                 onClick={() => onOrderTypeChange("dine-in")}
                 className={
-                  "flex-1 rounded-full px-3 py-1.5 text-xs font-medium " +
+                  "flex-1 cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium " +
                   (orderType === "dine-in" ? "bg-orange-700 text-white" : "bg-stone-100 text-stone-600")
                 }
               >
@@ -117,7 +123,10 @@ export default function CartSidebar({
       <CartSummary
         subtotal={subtotal}
         tax={tax}
+        serviceCharge={serviceCharge}
         total={total}
+        taxRate={taxRate}
+        serviceChargeRate={serviceChargeRate}
         disabled={Boolean(checkoutDisabled) || cart.length === 0}
         label={checkoutLabel}
         onCheckout={onCheckout}

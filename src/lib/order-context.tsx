@@ -9,8 +9,6 @@ import {
 } from "react";
 import { CartLine, MenuItem } from "./types";
 
-const TAX_RATE = 0.07;
-
 type OrderContextValue = {
   cart: CartLine[];
   addItem: (item: MenuItem) => void;
@@ -19,12 +17,23 @@ type OrderContextValue = {
   clearCart: () => void;
   subtotal: number;
   tax: number;
+  serviceCharge: number;
   total: number;
+  taxRate: number;
+  serviceChargeRate: number;
 };
 
 const OrderContext = createContext<OrderContextValue | null>(null);
 
-export function OrderProvider({ children }: { children: ReactNode }) {
+export function OrderProvider({
+  children,
+  taxRate = 0,
+  serviceChargeRate = 0,
+}: {
+  children: ReactNode;
+  taxRate?: number;
+  serviceChargeRate?: number;
+}) {
   const [cart, setCart] = useState<CartLine[]>([]);
 
   const addItem = (item: MenuItem) => {
@@ -62,8 +71,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     () => cart.reduce((sum, line) => sum + line.item.price * line.qty, 0),
     [cart]
   );
-  const tax = useMemo(() => Math.round(subtotal * TAX_RATE * 100) / 100, [subtotal]);
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
+  const tax = useMemo(
+    () => Math.round(subtotal * (taxRate / 100) * 100) / 100,
+    [subtotal, taxRate],
+  );
+  const serviceCharge = useMemo(
+    () => Math.round(subtotal * (serviceChargeRate / 100) * 100) / 100,
+    [subtotal, serviceChargeRate],
+  );
+  const total = useMemo(() => subtotal + tax + serviceCharge, [subtotal, tax, serviceCharge]);
 
   return (
     <OrderContext.Provider
@@ -75,7 +91,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         clearCart,
         subtotal,
         tax,
+        serviceCharge,
         total,
+        taxRate,
+        serviceChargeRate,
       }}
     >
       {children}

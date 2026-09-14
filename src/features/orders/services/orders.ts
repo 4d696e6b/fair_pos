@@ -75,12 +75,14 @@ function toOrder(id: string, data: Record<string, unknown>): Order {
     lines,
     subtotal: Number(data.subtotal ?? 0),
     tax: Number(data.tax ?? 0),
+    serviceCharge: typeof data.serviceCharge === "number" ? data.serviceCharge : undefined,
     total: Number(data.total ?? 0),
     status: (data.status as OrderStatus) ?? "received",
     createdAt: created.toISOString(),
     completedAt: data.completedAt ? toDate(data.completedAt).toISOString() : undefined,
     handledBy: data.handledBy ? String(data.handledBy) : undefined,
     estimatedMinutes: String(data.estimatedMinutes ?? "5 - 10 นาที"),
+    nudgedAt: data.nudgedAt ? toDate(data.nudgedAt).toISOString() : undefined,
   };
 }
 
@@ -108,6 +110,7 @@ export async function createOrder(input: {
   lines: CartLine[];
   subtotal: number;
   tax: number;
+  serviceCharge?: number;
   total: number;
   type?: OrderType;
   tableLabel?: string;
@@ -127,6 +130,7 @@ export async function createOrder(input: {
     lines: input.lines,
     subtotal: input.subtotal,
     tax: input.tax,
+    serviceCharge: input.serviceCharge ?? 0,
     total: input.total,
     status: "received" as OrderStatus,
     estimatedMinutes: "5 - 10 นาที",
@@ -205,6 +209,17 @@ export async function completeOpenOrdersForTable(
       .filter((order) => order.tableLabel === tableLabel && isOpenKitchenStatus(order.status))
       .map((order) => updateOrderStatus(order.id, "completed", handledBy)),
   );
+}
+
+export async function completeOrders(orderIds: string[], handledBy?: string): Promise<void> {
+  await Promise.all(orderIds.map((orderId) => updateOrderStatus(orderId, "completed", handledBy)));
+}
+
+export async function markOrderNudged(orderId: string): Promise<void> {
+  await updateDoc(orderDoc(orderId), {
+    nudgedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export function listenOrdersForShop(

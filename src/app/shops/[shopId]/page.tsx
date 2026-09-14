@@ -15,11 +15,11 @@ export default function ShopShortcutPage({
 
   useEffect(() => {
     void getShop(shopId).then((shop) => {
-      if (shop?.fairId) {
-        router.replace(`/fairs/${shop.fairId}/shops/${shop.id}`);
+      if (!shop) {
+        router.replace("/");
         return;
       }
-      router.replace("/");
+      router.replace(`/fairs/${shop.fairId || "standalone"}/shops/${shop.id}`);
     });
   }, [router, shopId]);
 
