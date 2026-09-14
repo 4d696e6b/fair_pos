@@ -1,7 +1,7 @@
 # 🍽️ FairPOS
 
 <p align="center">
-  <img src="./docs/logoBanner.jpg" title="Logo" width="100%"/>
+  <img src="./logoBanner.jpg" title="Logo" width="100%"/>
 </p>
 
 <p align="center">
@@ -73,41 +73,41 @@ FairPOS is designed for:
 <table>
 <tr>
 <td align="center">
-  <img src="./docs/UI7.png" width="100%"/>
+  <img src="./UI7.png" width="100%"/>
   <br><b>Searching For Fair</b>
 </td>
 <td align="center">
-  <img src="./docs/UI8.png" width="100%"/>
+  <img src="./UI8.png" width="100%"/>
   <br><b>Searching For Restaurant</b>
 </td>
 </tr>
 <tr>
 <td align="center">
-  <img src="./docs/UI1.png" width="100%"/>
+  <img src="./UI1.png" width="100%"/>
   <br><b>Take & Submit Order</b>
 </td>
 <td align="center">
-  <img src="./docs/UI2.png" width="100%"/>
+  <img src="./UI2.png" width="100%"/>
   <br><b>Manage & Split Bill</b>
 </td>
 </tr>
 <tr>
 <td align="center">
-  <img src="./docs/UI3.png" width="100%"/>
+  <img src="./UI3.png" width="100%"/>
   <br><b>Real-time Kitchen Display Queue</b>
 </td>
 <td align="center">
-  <img src="./docs/UI4.png" width="100%"/>
+  <img src="./UI4.png" width="100%"/>
   <br><b>Store & Employee Role Management</b>
 </td>
 </tr>
 <tr>
 <td align="center">
-  <img src="./docs/UI5.png" width="100%"/>
+  <img src="./UI5.png" width="100%"/>
   <br><b>Cost Analysis</b>
 </td>
 <td align="center">
-  <img src="./docs/UI6.png" width="100%"/>
+  <img src="./UI6.png" width="100%"/>
   <br><b>Financial Management</b>
 </td>
 </tr>
