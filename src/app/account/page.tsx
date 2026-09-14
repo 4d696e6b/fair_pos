@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import Header from "@/components/Header";
-import ProfileSidebar from "@/components/account/ProfileSidebar";
-import PersonalInfoCard, { PersonalInfo } from "@/components/account/PersonalInfoCard";
-import NotificationsCard, { NotificationPrefs } from "@/components/account/NotificationsCard";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Header from "@/components/shared/Header";
+import ProfileSidebar from "./components/ProfileSidebar";
+import PersonalInfoCard, { PersonalInfo } from "./components/PersonalInfoCard";
+import NotificationsCard, { NotificationPrefs } from "./components/NotificationsCard";
+import SecurityCard from "./components/SecurityCard";
+import { getUserProfile, updateUserProfile } from "@/features/auth";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AccountPage() {
+  const { user, loading, openLogin, merchantMode, toggleMerchantMode } = useAuth();
+  const router = useRouter();
   const [info, setInfo] = useState<PersonalInfo>({
     firstName: "",
     lastName: "",
@@ -17,11 +23,59 @@ export default function AccountPage() {
     salesSummary: false,
   });
 
-  const email = "example@gmail.com";
-  const fullName = `${info.firstName} ${info.lastName}`.trim();
+  const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
-  const handleSave = () => {
-    // wire up to your API from here
+  useEffect(() => {
+    if (!loading && !user) {
+      openLogin();
+      router.replace("/");
+    }
+  }, [loading, user, openLogin, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    void getUserProfile(user.uid).then((profile) => {
+      if (!profile) return;
+      setInfo({
+        firstName: profile.firstName ?? "",
+        lastName: profile.lastName ?? "",
+        phone: profile.phone ?? "",
+      });
+      setPrefs({
+        email: profile.notifyEmail !== false,
+        salesSummary: Boolean(profile.notifySalesSummary),
+      });
+      setAvatarUrl(profile.photoURL || user.photoURL || undefined);
+    });
+  }, [user]);
+
+  if (loading || !user) {
+    return (
+      <div>
+        <Header variant="site" />
+        <p className="px-6 py-10 text-center text-sm text-stone-500">กำลังโหลดบัญชี...</p>
+      </div>
+    );
+  }
+
+  const email = user.email ?? "";
+  const displayName = user.displayName?.trim() || email.split("@")[0] || "ผู้ใช้";
+  const fullName = `${info.firstName} ${info.lastName}`.trim() || displayName;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateUserProfile(user.uid, {
+        firstName: info.firstName,
+        lastName: info.lastName,
+        phone: info.phone,
+        notifyEmail: prefs.email,
+        notifySalesSummary: prefs.salesSummary,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -33,22 +87,43 @@ export default function AccountPage() {
           <ProfileSidebar
             name={fullName}
             email={email}
-            onSwitchToMerchant={() => {}}
+            avatarUrl={avatarUrl ?? user.photoURL ?? undefined}
+            merchantMode={merchantMode}
+            onSwitchToMerchant={toggleMerchantMode}
+            onAvatarChange={setAvatarUrl}
           />
 
           <div className="space-y-6">
             <PersonalInfoCard info={info} onChange={setInfo} />
             <NotificationsCard prefs={prefs} onChange={setPrefs} />
+            <SecurityCard onDeleted={() => router.replace("/")} />
 
             <div className="flex justify-end gap-3">
-              <button className="cursor-pointer rounded-full px-5 py-2.5 text-sm font-medium text-stone-500 transition hover:text-stone-800">
+              <button
+                onClick={() =>
+                  void getUserProfile(user.uid).then((profile) => {
+                    if (!profile) return;
+                    setInfo({
+                      firstName: profile.firstName ?? "",
+                      lastName: profile.lastName ?? "",
+                      phone: profile.phone ?? "",
+                    });
+                    setPrefs({
+                      email: profile.notifyEmail !== false,
+                      salesSummary: Boolean(profile.notifySalesSummary),
+                    });
+                  })
+                }
+                className="cursor-pointer rounded-full px-5 py-2.5 text-sm font-medium text-stone-500 transition hover:text-stone-800"
+              >
                 ยกเลิก
               </button>
               <button
-                onClick={handleSave}
-                className="cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800"
+                onClick={() => void handleSave()}
+                disabled={saving}
+                className="cursor-pointer rounded-full bg-orange-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-800 disabled:opacity-60"
               >
-                บันทึกการเปลี่ยนแปลง
+                {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
               </button>
             </div>
           </div>

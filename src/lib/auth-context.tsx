@@ -7,22 +7,25 @@ import {
   useState,
   ReactNode,
 } from "react";
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  User,
-} from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
+import { onAuthStateChanged, signOut as firebaseSignOut, User } from "firebase/auth";
+import { auth } from "./firebase";
+import { usePathname } from "next/navigation";
+
+type AuthModal = "login" | "register" | "forgot-password" | null;
+
+const MERCHANT_MODE_KEY = "fair-pos-merchant-mode";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  isLoginOpen: boolean;
+  authModal: AuthModal;
   openLogin: () => void;
-  closeLogin: () => void;
-  signInWithGoogle: () => Promise<void>;
+  openRegister: () => void;
+  openForgotPassword: () => void;
+  closeAuthModal: () => void;
   signOut: () => Promise<void>;
+  merchantMode: boolean;
+  toggleMerchantMode: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -30,33 +33,59 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoginOpen, setLoginOpen] = useState(false);
+  const [authModal, setAuthModal] = useState<AuthModal>(null);
+  const [merchantMode, setMerchantMode] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    setMerchantMode(window.localStorage.getItem(MERCHANT_MODE_KEY) === "1");
+  }, []);
+
+  useEffect(() => {
+    setAuthModal(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
       setLoading(false);
+      if (nextUser) {
+        setAuthModal(null);
+      } else {
+        setMerchantMode(false);
+        window.localStorage.removeItem(MERCHANT_MODE_KEY);
+      }
     });
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
-    setLoginOpen(false);
+  const signOut = () => {
+    setMerchantMode(false);
+    window.localStorage.removeItem(MERCHANT_MODE_KEY);
+    return firebaseSignOut(auth);
   };
 
-  const signOut = () => firebaseSignOut(auth);
+  const toggleMerchantMode = () => {
+    setMerchantMode((prev) => {
+      const next = !prev;
+      window.localStorage.setItem(MERCHANT_MODE_KEY, next ? "1" : "0");
+      return next;
+    });
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
-        isLoginOpen,
-        openLogin: () => setLoginOpen(true),
-        closeLogin: () => setLoginOpen(false),
-        signInWithGoogle,
+        authModal,
+        openLogin: () => setAuthModal("login"),
+        openRegister: () => setAuthModal("register"),
+        openForgotPassword: () => setAuthModal("forgot-password"),
+        closeAuthModal: () => setAuthModal(null),
         signOut,
+        merchantMode,
+        toggleMerchantMode,
       }}
     >
       {children}

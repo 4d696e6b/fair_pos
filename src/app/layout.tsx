@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import LoginModal from "@/components/auth/LoginModal";
+import LoginModal from "@/components/shared/LoginModal";
+import RegisterModal from "@/components/shared/RegisterModal";
+import ForgotPasswordModal from "@/components/shared/ForgotPasswordModal";
 
 export const metadata: Metadata = {
   title: "Fair POS",
+  icons: {
+    icon: '/logo_simple.png', 
+  },
   description: "ค้นหาและสั่งอาหารจากงานแฟร์ใกล้คุณ",
 };
 
@@ -17,6 +22,8 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <LoginModal />
+          <RegisterModal />
+          <ForgotPasswordModal />
         </AuthProvider>
       </body>
     </html>

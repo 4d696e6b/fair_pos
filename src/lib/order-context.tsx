@@ -7,9 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { CartLine, MenuItem, Order } from "./types";
-
-const TAX_RATE = 0.07;
+import { CartLine, MenuItem } from "./types";
 
 type OrderContextValue = {
   cart: CartLine[];
@@ -19,30 +17,24 @@ type OrderContextValue = {
   clearCart: () => void;
   subtotal: number;
   tax: number;
+  serviceCharge: number;
   total: number;
-  order: Order | null;
-  placeOrder: (fairId: string, shopId: string, boothNumber: string) => Order;
+  taxRate: number;
+  serviceChargeRate: number;
 };
 
 const OrderContext = createContext<OrderContextValue | null>(null);
 
-function randomQueueNumber() {
-  const n = Math.floor(Math.random() * 900) + 100;
-  return `A${n}`;
-}
-
-function randomRefCode() {
-  const digits = Math.floor(Math.random() * 90000) + 10000;
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const suffix =
-    letters[Math.floor(Math.random() * letters.length)] +
-    letters[Math.floor(Math.random() * letters.length)];
-  return `REF-${digits}-${suffix}`;
-}
-
-export function OrderProvider({ children }: { children: ReactNode }) {
+export function OrderProvider({
+  children,
+  taxRate = 0,
+  serviceChargeRate = 0,
+}: {
+  children: ReactNode;
+  taxRate?: number;
+  serviceChargeRate?: number;
+}) {
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [order, setOrder] = useState<Order | null>(null);
 
   const addItem = (item: MenuItem) => {
     setCart((prev) => {
@@ -72,38 +64,22 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       )
     );
   };
-  
+
   const clearCart = () => setCart([]);
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.item.price * line.qty, 0),
     [cart]
   );
-  const tax = useMemo(() => Math.round(subtotal * TAX_RATE * 100) / 100, [subtotal]);
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
-
-  const placeOrder = (fairId: string, shopId: string, boothNumber: string) => {
-    const newOrder: Order = {
-      id: crypto.randomUUID(),
-      queueNumber: randomQueueNumber(),
-      refCode: randomRefCode(),
-      fairId,
-      shopId,
-      lines: cart,
-      subtotal,
-      tax,
-      total,
-      status: "preparing",
-      createdAt: new Date().toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      estimatedMinutes: "5 - 10 นาที",
-    };
-    setOrder(newOrder);
-    clearCart();
-    return newOrder;
-  };
+  const tax = useMemo(
+    () => Math.round(subtotal * (taxRate / 100) * 100) / 100,
+    [subtotal, taxRate],
+  );
+  const serviceCharge = useMemo(
+    () => Math.round(subtotal * (serviceChargeRate / 100) * 100) / 100,
+    [subtotal, serviceChargeRate],
+  );
+  const total = useMemo(() => subtotal + tax + serviceCharge, [subtotal, tax, serviceCharge]);
 
   return (
     <OrderContext.Provider
@@ -115,9 +91,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         clearCart,
         subtotal,
         tax,
+        serviceCharge,
         total,
-        order,
-        placeOrder,
+        taxRate,
+        serviceChargeRate,
       }}
     >
       {children}
